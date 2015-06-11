@@ -13,12 +13,14 @@ CONFIG(debug, debug|release) {
 }
 
 SOURCES += \
+    src/HarbourJson.cpp \
     src/HarbourLib.cpp \
     src/HarbourSystemState.cpp
 
 INCLUDEPATH += include
 PUBLIC_HEADERS += \
     include/HarbourDebug.h \
+    include/HarbourJson.h \
     include/HarbourLib.h \
     include/HarbourSystemState.h
 
