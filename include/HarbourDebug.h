@@ -54,4 +54,12 @@
 #  define HVERIFY(x) (x)
 #endif // HARBOUR_DEBUG
 
+#if QT_VERSION >= 0x050000
+# define HWARN(x) qWarning() << x
+#else
+# define HWARN(x) qWarning() << Q_FUNC_INFO << x
+#endif
+
+#define HVERBOSE(expr) ((void)0)
+
 #endif // HARBOUR_DEBUG_H
