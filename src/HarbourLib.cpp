@@ -35,7 +35,11 @@
 #include "HarbourDebug.h"
 #include "HarbourSystemState.h"
 
-#include <QtQml>
+#if QT_VERSION >= 0x050000
+#  include <QtQml>
+#else
+#  include <QtDeclarative/qdeclarative.h>
+#endif
 
 QML_DECLARE_TYPE(HarbourSystemState)
 
