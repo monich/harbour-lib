@@ -1,10 +1,16 @@
 TEMPLATE = lib
 CONFIG += static
 TARGET = harbour-lib
-QT += dbus qml
+QT += dbus
 QT -= gui
 
 VERSION = 1.0
+
+greaterThan(QT_MAJOR_VERSION, 4) {
+QT += qml
+} else {
+QT += declarative
+}
 
 QMAKE_CXXFLAGS += -Wno-unused-parameter -Wno-psabi
 
