@@ -45,6 +45,19 @@ class HarbourSystemState: public QObject
     Q_PROPERTY(QString displayStatus READ displayStatus NOTIFY displayStatusChanged)
     Q_PROPERTY(QString lockMode READ lockMode NOTIFY lockModeChanged)
 
+    Q_PROPERTY(QString MCE_DISPLAY_ON READ _MCE_DISPLAY_ON CONSTANT)
+    Q_PROPERTY(QString MCE_DISPLAY_DIM READ _MCE_DISPLAY_DIM CONSTANT)
+    Q_PROPERTY(QString MCE_DISPLAY_OFF READ _MCE_DISPLAY_OFF CONSTANT)
+    Q_PROPERTY(QString MCE_TK_LOCKED READ _MCE_TK_LOCKED CONSTANT)
+    Q_PROPERTY(QString MCE_TK_UNLOCKED READ _MCE_TK_UNLOCKED CONSTANT)
+
+public:
+    static const QString MCE_DISPLAY_ON;
+    static const QString MCE_DISPLAY_DIM;
+    static const QString MCE_DISPLAY_OFF;
+    static const QString MCE_TK_LOCKED;
+    static const QString MCE_TK_UNLOCKED;
+
 public:
     explicit HarbourSystemState(QObject* aParent = NULL);
     ~HarbourSystemState();
@@ -67,6 +80,14 @@ private Q_SLOTS:
     void onDisplayStatusQueryDone(QDBusPendingCallWatcher*);
     void onLockModeChanged(QString);
     void onLockModeQueryDone(QDBusPendingCallWatcher*);
+
+private:
+    // Getters for QML constants
+    QString _MCE_DISPLAY_ON() const { return MCE_DISPLAY_ON; }
+    QString _MCE_DISPLAY_DIM() const { return MCE_DISPLAY_DIM; }
+    QString _MCE_DISPLAY_OFF() const { return MCE_DISPLAY_OFF; }
+    QString _MCE_TK_LOCKED() const { return MCE_TK_LOCKED; }
+    QString _MCE_TK_UNLOCKED() const { return MCE_TK_UNLOCKED; }
 
 private:
     QString iDisplayStatus;

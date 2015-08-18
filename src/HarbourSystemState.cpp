@@ -42,6 +42,12 @@
 
 #define MCE_SERVICE "com.nokia.mce"
 
+const QString HarbourSystemState::MCE_DISPLAY_ON("on");
+const QString HarbourSystemState::MCE_DISPLAY_DIM("dimmed");
+const QString HarbourSystemState::MCE_DISPLAY_OFF("off");
+const QString HarbourSystemState::MCE_TK_LOCKED("locked");
+const QString HarbourSystemState::MCE_TK_UNLOCKED("unlocked");
+
 HarbourSystemState::HarbourSystemState(
     QObject* aParent) :
     QObject(aParent)
