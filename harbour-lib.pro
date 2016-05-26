@@ -21,19 +21,31 @@ CONFIG(debug, debug|release) {
 SOURCES += \
     src/HarbourJson.cpp \
     src/HarbourLib.cpp \
-    src/HarbourSystemState.cpp
+    src/HarbourSystemState.cpp \
+    src/HarbourTransferMethodInfo.cpp \
+    src/HarbourTransferMethodsModel.cpp
 
 INCLUDEPATH += include
 PUBLIC_HEADERS += \
     include/HarbourDebug.h \
     include/HarbourJson.h \
     include/HarbourLib.h \
-    include/HarbourSystemState.h
+    include/HarbourSystemState.h \
+    include/HarbourTransferMethodInfo.h \
+    include/HarbourTransferMethodsModel.h
 
 HEADERS += \
   $$PUBLIC_HEADERS
 
-OTHER_FILES += rpm/harbour-lib-devel.spec
+OTHER_FILES += \
+  rpm/harbour-lib-devel.spec \
+  src/org.nemo.transferengine.xml
+
+# D-Bus interfaces
+DBUS_INTERFACES += transferengine
+transferengine.files = src/org.nemo.transferengine.xml
+transferengine.header_flags = -N -c OrgNemoTransferEngine -i HarbourTransferMethodInfo.h
+transferengine.source_flags = -N -c OrgNemoTransferEngine
 
 headers.path = $$INSTALL_ROOT$$PREFIX/include/$$TARGET
 headers.files = $$PUBLIC_HEADERS
