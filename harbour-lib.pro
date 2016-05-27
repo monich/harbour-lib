@@ -21,6 +21,7 @@ CONFIG(debug, debug|release) {
 SOURCES += \
     src/HarbourJson.cpp \
     src/HarbourLib.cpp \
+    src/HarbourSigChildHandler.cpp \
     src/HarbourSystemState.cpp \
     src/HarbourTransferMethodInfo.cpp \
     src/HarbourTransferMethodsModel.cpp
@@ -30,6 +31,7 @@ PUBLIC_HEADERS += \
     include/HarbourDebug.h \
     include/HarbourJson.h \
     include/HarbourLib.h \
+    include/HarbourSigChildHandler.h \
     include/HarbourSystemState.h \
     include/HarbourTransferMethodInfo.h \
     include/HarbourTransferMethodsModel.h
