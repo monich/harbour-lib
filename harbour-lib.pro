@@ -12,7 +12,7 @@ QT += qml
 QT += declarative
 }
 
-QMAKE_CXXFLAGS += -Wno-unused-parameter -Wno-psabi
+QMAKE_CXXFLAGS += -Wno-unused-parameter -Wno-unused-result -Wno-psabi
 
 CONFIG(debug, debug|release) {
   DEFINES += HARBOUR_DEBUG=1
