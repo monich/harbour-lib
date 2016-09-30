@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 Jolla Ltd.
+ * Copyright (C) 2015-2016 Jolla Ltd.
  * Contact: Slava Monich <slava.monich@jolla.com>
  *
  * You may use this file under the terms of the BSD license as follows:
@@ -8,13 +8,13 @@
  * modification, are permitted provided that the following conditions
  * are met:
  *
- *   * Redistributions of source code must retain the above copyright
+ *   - Redistributions of source code must retain the above copyright
  *     notice, this list of conditions and the following disclaimer.
- *   * Redistributions in binary form must reproduce the above copyright
+ *   - Redistributions in binary form must reproduce the above copyright
  *     notice, this list of conditions and the following disclaimer in
  *     the documentation and/or other materials provided with the
  *     distribution.
- *   * Neither the name of Nemo Mobile nor the names of its contributors
+ *   - Neither the name of Jolla Ltd nor the names of its contributors
  *     may be used to endorse or promote products derived from this
  *     software without specific prior written permission.
  *
@@ -48,9 +48,40 @@ const QString HarbourSystemState::MCE_DISPLAY_OFF("off");
 const QString HarbourSystemState::MCE_TK_LOCKED("locked");
 const QString HarbourSystemState::MCE_TK_UNLOCKED("unlocked");
 
-HarbourSystemState::HarbourSystemState(
-    QObject* aParent) :
-    QObject(aParent)
+// ==========================================================================
+// HarbourSystemState::Private
+// ==========================================================================
+class HarbourSystemState::Private : public QObject
+{
+    Q_OBJECT
+
+public:
+    static QWeakPointer<HarbourSystemState> sSharedInstance;
+    HarbourSystemState* iParent;
+    QString iDisplayStatus;
+    QString iLockMode;
+
+    Private(HarbourSystemState* aParent);
+
+private:
+    void setupProperty(QString aQueryMethod, QString aSignal,
+        const char* aQuerySlot, const char* aSignalSlot);
+    void setDisplayStatus(QString aStatus);
+    void setLockMode(QString aStatus);
+
+public Q_SLOTS:
+    void onDisplayStatusChanged(QString);
+    void onDisplayStatusQueryDone(QDBusPendingCallWatcher*);
+    void onLockModeChanged(QString);
+    void onLockModeQueryDone(QDBusPendingCallWatcher*);
+};
+
+QWeakPointer<HarbourSystemState> HarbourSystemState::Private::sSharedInstance;
+
+HarbourSystemState::Private::Private(
+    HarbourSystemState* aParent) :
+    QObject(aParent),
+    iParent(aParent)
 {
     HDEBUG("created");
     setupProperty("get_display_status", "display_status_ind",
@@ -61,13 +92,8 @@ HarbourSystemState::HarbourSystemState(
         SLOT(onLockModeChanged(QString)));
 }
 
-HarbourSystemState::~HarbourSystemState()
-{
-    HDEBUG("destroyed");
-}
-
 void
-HarbourSystemState::setupProperty(
+HarbourSystemState::Private::setupProperty(
     QString aQueryMethod,
     QString aSignal,
     const char* aQuerySlot,
@@ -83,17 +109,17 @@ HarbourSystemState::setupProperty(
 }
 
 void
-HarbourSystemState::setDisplayStatus(
+HarbourSystemState::Private::setDisplayStatus(
     QString aStatus)
 {
     if (iDisplayStatus != aStatus) {
         iDisplayStatus = aStatus;
-        emit displayStatusChanged();
+        Q_EMIT iParent->displayStatusChanged();
     }
 }
 
 void
-HarbourSystemState::onDisplayStatusChanged(
+HarbourSystemState::Private::onDisplayStatusChanged(
     QString aStatus)
 {
     HDEBUG(aStatus);
@@ -101,7 +127,7 @@ HarbourSystemState::onDisplayStatusChanged(
 }
 
 void
-HarbourSystemState::onDisplayStatusQueryDone(
+HarbourSystemState::Private::onDisplayStatusQueryDone(
     QDBusPendingCallWatcher* aWatcher)
 {
     QDBusPendingReply<QString> reply(*aWatcher);
@@ -113,17 +139,17 @@ HarbourSystemState::onDisplayStatusQueryDone(
 }
 
 void
-HarbourSystemState::setLockMode(
+HarbourSystemState::Private::setLockMode(
     QString aMode)
 {
     if (iLockMode != aMode) {
         iLockMode = aMode;
-        emit lockModeChanged();
+        Q_EMIT iParent->lockModeChanged();
     }
 }
 
 void
-HarbourSystemState::onLockModeChanged(
+HarbourSystemState::Private::onLockModeChanged(
     QString aMode)
 {
     HDEBUG(aMode);
@@ -131,7 +157,7 @@ HarbourSystemState::onLockModeChanged(
 }
 
 void
-HarbourSystemState::onLockModeQueryDone(
+HarbourSystemState::Private::onLockModeQueryDone(
     QDBusPendingCallWatcher* aWatcher)
 {
     QDBusPendingReply<QString> reply(*aWatcher);
@@ -141,3 +167,48 @@ HarbourSystemState::onLockModeQueryDone(
     }
     aWatcher->deleteLater();
 }
+
+// ==========================================================================
+// HarbourSystemState
+// ==========================================================================
+
+HarbourSystemState::HarbourSystemState(
+    QObject* aParent) :
+    QObject(aParent),
+    iPrivate(new Private(this))
+{
+    HDEBUG("created");
+}
+
+HarbourSystemState::~HarbourSystemState()
+{
+    HDEBUG("destroyed");
+}
+
+QSharedPointer<HarbourSystemState>
+HarbourSystemState::sharedInstance()
+{
+    QSharedPointer<HarbourSystemState> instance = Private::sSharedInstance;
+    if (instance.isNull()) {
+        // QObject::deleteLater protects against trouble in case if the
+        // recipient of the signal drops the last shared reference.
+        instance = QSharedPointer<HarbourSystemState>(new HarbourSystemState,
+            &QObject::deleteLater);
+        Private::sSharedInstance = instance;
+    }
+    return instance;
+}
+
+QString
+HarbourSystemState::displayStatus() const
+{
+    return iPrivate->iDisplayStatus;
+}
+
+QString
+HarbourSystemState::lockMode() const
+{
+    return iPrivate->iLockMode;
+}
+
+#include "HarbourSystemState.moc"

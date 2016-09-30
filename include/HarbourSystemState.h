@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 Jolla Ltd.
+ * Copyright (C) 2015-2016 Jolla Ltd.
  * Contact: Slava Monich <slava.monich@jolla.com>
  *
  * You may use this file under the terms of the BSD license as follows:
@@ -8,13 +8,13 @@
  * modification, are permitted provided that the following conditions
  * are met:
  *
- *   * Redistributions of source code must retain the above copyright
+ *   - Redistributions of source code must retain the above copyright
  *     notice, this list of conditions and the following disclaimer.
- *   * Redistributions in binary form must reproduce the above copyright
+ *   - Redistributions in binary form must reproduce the above copyright
  *     notice, this list of conditions and the following disclaimer in
  *     the documentation and/or other materials provided with the
  *     distribution.
- *   * Neither the name of Nemo Mobile nor the names of its contributors
+ *   - Neither the name of Jolla Ltd nor the names of its contributors
  *     may be used to endorse or promote products derived from this
  *     software without specific prior written permission.
  *
@@ -36,6 +36,7 @@
 
 #include <QObject>
 #include <QString>
+#include <QSharedPointer>
 
 class QDBusPendingCallWatcher;
 
@@ -62,24 +63,14 @@ public:
     explicit HarbourSystemState(QObject* aParent = NULL);
     ~HarbourSystemState();
 
-    QString displayStatus() const { return iDisplayStatus; }
-    QString lockMode() const { return iLockMode; }
+    static QSharedPointer<HarbourSystemState> sharedInstance();
 
-private:
-    void setupProperty(QString aQueryMethod, QString aSignal,
-        const char* aQuerySlot, const char* aSignalSlot);
-    void setDisplayStatus(QString aStatus);
-    void setLockMode(QString aStatus);
+    QString displayStatus() const;
+    QString lockMode() const;
 
 Q_SIGNALS:
     void displayStatusChanged();
     void lockModeChanged();
-
-private Q_SLOTS:
-    void onDisplayStatusChanged(QString);
-    void onDisplayStatusQueryDone(QDBusPendingCallWatcher*);
-    void onLockModeChanged(QString);
-    void onLockModeQueryDone(QDBusPendingCallWatcher*);
 
 private:
     // Getters for QML constants
@@ -90,8 +81,8 @@ private:
     QString _MCE_TK_UNLOCKED() const { return MCE_TK_UNLOCKED; }
 
 private:
-    QString iDisplayStatus;
-    QString iLockMode;
+    class Private;
+    Private* iPrivate;
 };
 
 #endif // HARBOUR_SYSTEM_STATE_H
