@@ -211,4 +211,16 @@ HarbourSystemState::lockMode() const
     return iPrivate->iLockMode;
 }
 
+bool
+HarbourSystemState::displayOff() const
+{
+    return iPrivate->iDisplayStatus == MCE_DISPLAY_OFF;
+}
+
+bool
+HarbourSystemState::locked() const
+{
+    return iPrivate->iLockMode == MCE_TK_LOCKED;
+}
+
 #include "HarbourSystemState.moc"

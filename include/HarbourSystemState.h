@@ -68,6 +68,9 @@ public:
     QString displayStatus() const;
     QString lockMode() const;
 
+    bool displayOff() const;
+    bool locked() const;
+
 Q_SIGNALS:
     void displayStatusChanged();
     void lockModeChanged();
