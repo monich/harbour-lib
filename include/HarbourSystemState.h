@@ -38,8 +38,6 @@
 #include <QString>
 #include <QSharedPointer>
 
-class QDBusPendingCallWatcher;
-
 class HarbourSystemState: public QObject
 {
     Q_OBJECT
