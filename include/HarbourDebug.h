@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 Jolla Ltd.
+ * Copyright (C) 2015-2016 Jolla Ltd.
  * Contact: Slava Monich <slava.monich@jolla.com>
  *
  * You may use this file under the terms of the BSD license as follows:
@@ -14,7 +14,7 @@
  *     notice, this list of conditions and the following disclaimer in
  *     the documentation and/or other materials provided with the
  *     distribution.
- *   * Neither the name of Nemo Mobile nor the names of its contributors
+ *   * Neither the name of Jolla Ltd nor the names of its contributors
  *     may be used to endorse or promote products derived from this
  *     software without specific prior written permission.
  *
@@ -38,7 +38,21 @@
 #  define HARBOUR_DEBUG 0
 #endif // HARBOUR_DEBUG
 
+#ifndef HARBOUR_VERBOSE
+#  define HARBOUR_VERBOSE 0
+#endif // HARBOUR_VERBOSE
+
 #include <QDebug>
+
+#if HARBOUR_VERBOSE
+#if QT_VERSION >= 0x050000
+#  define HVERBOSE(x) qDebug() << x
+#else
+#  define HVERBOSE(x) qDebug() << Q_FUNC_INFO << x
+#endif
+#else
+#  define HVERBOSE(expr) ((void)0)
+#endif // HARBOUR_VERBOSE
 
 #if HARBOUR_DEBUG
 #if QT_VERSION >= 0x050000
@@ -59,7 +73,5 @@
 #else
 # define HWARN(x) qWarning() << Q_FUNC_INFO << x
 #endif
-
-#define HVERBOSE(expr) ((void)0)
 
 #endif // HARBOUR_DEBUG_H
