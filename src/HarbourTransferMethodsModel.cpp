@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016 Jolla Ltd.
+ * Copyright (C) 2016-2017 Jolla Ltd.
  * Contact: Slava Monich <slava.monich@jolla.com>
  *
  * You may use this file under the terms of BSD license as follows:
@@ -33,15 +33,44 @@
 #include "HarbourTransferMethodsModel.h"
 #include "HarbourDebug.h"
 
-#include "transferengine_interface.h"
-
 #include <QTranslator>
+
+// ==========================================================================
+// HarbourTransferMethodsModel::TransferEngine
+// ==========================================================================
+
+class HarbourTransferMethodsModel::TransferEngine: public QDBusAbstractInterface
+{
+    Q_OBJECT
+
+    static const char SERVICE[];
+    static const char PATH[];
+    static const char INTERFACE[];
+
+public:
+    TransferEngine(QObject* aParent) : QDBusAbstractInterface(SERVICE, PATH,
+        INTERFACE, QDBusConnection::sessionBus(), aParent) {}
+
+public: // METHODS
+    inline QDBusPendingCall transferMethods()
+        { return asyncCall("transferMethods"); }
+
+Q_SIGNALS: // SIGNALS
+    void transferMethodListChanged();
+};
+
+const char HarbourTransferMethodsModel::TransferEngine::SERVICE[] = "org.nemo.transferengine";
+const char HarbourTransferMethodsModel::TransferEngine::PATH[] = "/org/nemo/transferengine";
+const char HarbourTransferMethodsModel::TransferEngine::INTERFACE[] = "org.nemo.transferengine";
+
+// ==========================================================================
+// HarbourTransferMethodsModel
+// ==========================================================================
 
 HarbourTransferMethodsModel::HarbourTransferMethodsModel(QObject* aParent):
     QAbstractListModel(aParent)
 {
-    iTransferEngine = new OrgNemoTransferEngine("org.nemo.transferengine",
-        "/org/nemo/transferengine", QDBusConnection::sessionBus(), this);
+    iTransferEngine = new TransferEngine(this);
     connect(iTransferEngine,
         SIGNAL(transferMethodListChanged()),
         SLOT(requestUpdate()));
@@ -184,3 +213,5 @@ void HarbourTransferMethodsModel::filterModel()
     }
     endResetModel();
 }
+
+#include "HarbourTransferMethodsModel.moc"

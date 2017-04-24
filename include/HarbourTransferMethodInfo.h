@@ -66,5 +66,6 @@ QDBusArgument& operator<<(QDBusArgument& aArg, const HarbourTransferMethodInfo& 
 const QDBusArgument& operator>>(const QDBusArgument& aArg, HarbourTransferMethodInfo& aInfo);
 
 Q_DECLARE_METATYPE(HarbourTransferMethodInfo)
+Q_DECLARE_METATYPE(QList<HarbourTransferMethodInfo>)
 
 #endif // HARBOUR_TRANSFER_METHOD_INFO_H

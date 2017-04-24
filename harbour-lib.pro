@@ -40,14 +40,7 @@ HEADERS += \
   $$PUBLIC_HEADERS
 
 OTHER_FILES += \
-  rpm/harbour-lib-devel.spec \
-  src/org.nemo.transferengine.xml
-
-# D-Bus interfaces
-DBUS_INTERFACES += transferengine
-transferengine.files = src/org.nemo.transferengine.xml
-transferengine.header_flags = -N -c OrgNemoTransferEngine -i HarbourTransferMethodInfo.h
-transferengine.source_flags = -N -c OrgNemoTransferEngine
+  rpm/harbour-lib-devel.spec
 
 headers.path = $$INSTALL_ROOT$$PREFIX/include/$$TARGET
 headers.files = $$PUBLIC_HEADERS
