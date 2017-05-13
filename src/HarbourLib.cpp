@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 Jolla Ltd.
+ * Copyright (C) 2015-2017 Jolla Ltd.
  * Contact: Slava Monich <slava.monich@jolla.com>
  *
  * You may use this file under the terms of the BSD license as follows:
@@ -14,7 +14,7 @@
  *     notice, this list of conditions and the following disclaimer in
  *     the documentation and/or other materials provided with the
  *     distribution.
- *   * Neither the name of Nemo Mobile nor the names of its contributors
+ *   * Neither the name of Jolla Ltd nor the names of its contributors
  *     may be used to endorse or promote products derived from this
  *     software without specific prior written permission.
  *
@@ -34,6 +34,7 @@
 #include "HarbourLib.h"
 #include "HarbourDebug.h"
 #include "HarbourSystemState.h"
+#include "HarbourTransferMethodsModel.h"
 
 #if QT_VERSION >= 0x050000
 #  include <QtQml>
@@ -42,6 +43,7 @@
 #endif
 
 QML_DECLARE_TYPE(HarbourSystemState)
+QML_DECLARE_TYPE(HarbourTransferMethodsModel)
 
 void
 HarbourLib::registerTypes(
@@ -51,4 +53,5 @@ HarbourLib::registerTypes(
 {
     HDEBUG(aUri << aMinor << aMajor);
     qmlRegisterType<HarbourSystemState>(aUri, aMajor, aMinor, "SystemState");
+    qmlRegisterType<HarbourTransferMethodsModel>(aUri, aMajor, aMinor, "TransferMethodsModel");
 }
