@@ -1,6 +1,6 @@
 /*
- * Copyright (C) 2015-2016 Jolla Ltd.
- * Contact: Slava Monich <slava.monich@jolla.com>
+ * Copyright (C) 2015-2017 Jolla Ltd.
+ * Copyright (C) 2015-2017 Slava Monich <slava.monich@jolla.com>
  *
  * You may use this file under the terms of the BSD license as follows:
  *
@@ -63,6 +63,9 @@ public:
 
     Private(HarbourSystemState* aParent);
 
+    bool displayOff() const;
+    bool locked() const;
+
 private:
     void setupProperty(QString aQueryMethod, QString aSignal,
         const char* aQuerySlot, const char* aSignalSlot);
@@ -108,13 +111,24 @@ HarbourSystemState::Private::setupProperty(
         "com.nokia.mce.signal", aSignal, this, aSignalSlot);
 }
 
+bool
+HarbourSystemState::Private::displayOff() const
+{
+    return iDisplayStatus == MCE_DISPLAY_OFF;
+}
+
 void
 HarbourSystemState::Private::setDisplayStatus(
     QString aStatus)
 {
     if (iDisplayStatus != aStatus) {
+        const bool displayWasOff = displayOff();
         iDisplayStatus = aStatus;
+        const bool displayIsOff = displayOff();
         Q_EMIT iParent->displayStatusChanged();
+        if (displayWasOff != displayIsOff) {
+            Q_EMIT iParent->displayOffChanged();
+        }
     }
 }
 
@@ -138,13 +152,24 @@ HarbourSystemState::Private::onDisplayStatusQueryDone(
     aWatcher->deleteLater();
 }
 
+bool
+HarbourSystemState::Private::locked() const
+{
+    return iLockMode == MCE_TK_LOCKED;
+}
+
 void
 HarbourSystemState::Private::setLockMode(
     QString aMode)
 {
     if (iLockMode != aMode) {
+        const bool wasLocked = locked();
         iLockMode = aMode;
+        const bool isLocked = locked();
         Q_EMIT iParent->lockModeChanged();
+        if (wasLocked != isLocked) {
+            Q_EMIT iParent->lockedChanged();
+        }
     }
 }
 
@@ -214,13 +239,13 @@ HarbourSystemState::lockMode() const
 bool
 HarbourSystemState::displayOff() const
 {
-    return iPrivate->iDisplayStatus == MCE_DISPLAY_OFF;
+    return iPrivate->displayOff();
 }
 
 bool
 HarbourSystemState::locked() const
 {
-    return iPrivate->iLockMode == MCE_TK_LOCKED;
+    return iPrivate->locked();
 }
 
 #include "HarbourSystemState.moc"

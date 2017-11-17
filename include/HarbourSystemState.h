@@ -1,6 +1,6 @@
 /*
  * Copyright (C) 2015-2016 Jolla Ltd.
- * Contact: Slava Monich <slava.monich@jolla.com>
+ * Copyright (C) 2015-2017 Slava Monich <slava.monich@jolla.com>
  *
  * You may use this file under the terms of the BSD license as follows:
  *
@@ -43,6 +43,8 @@ class HarbourSystemState: public QObject
     Q_OBJECT
     Q_PROPERTY(QString displayStatus READ displayStatus NOTIFY displayStatusChanged)
     Q_PROPERTY(QString lockMode READ lockMode NOTIFY lockModeChanged)
+    Q_PROPERTY(bool displayOff READ displayOff NOTIFY displayOffChanged)
+    Q_PROPERTY(bool locked READ locked NOTIFY lockedChanged)
 
     Q_PROPERTY(QString MCE_DISPLAY_ON READ _MCE_DISPLAY_ON CONSTANT)
     Q_PROPERTY(QString MCE_DISPLAY_DIM READ _MCE_DISPLAY_DIM CONSTANT)
@@ -71,7 +73,9 @@ public:
 
 Q_SIGNALS:
     void displayStatusChanged();
+    void displayOffChanged();
     void lockModeChanged();
+    void lockedChanged();
 
 private:
     // Getters for QML constants
