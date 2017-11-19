@@ -88,6 +88,7 @@ public:
 public:
     bool iTypesRegistered;
     QPluginLoader* iPlugin;
+    QQmlEngine* iEngine;
     QString iModule;
     int iMajor;
     int iMinor;
@@ -100,6 +101,7 @@ HarbourPluginLoader::Private::Private(
     int aMinor) :
     iTypesRegistered(false),
     iPlugin(pluginLoader(aEngine, aModule)),
+    iEngine(aEngine),
     iModule(aModule),
     iMajor(aMajor),
     iMinor(aMinor)
@@ -119,11 +121,21 @@ HarbourPluginLoader::Private::qmlType(
             iTypesRegistered = true;
             QObject* root = iPlugin->instance();
             if (root) {
-                QQmlTypesExtensionInterface* ext =
-                    qobject_cast<QQmlTypesExtensionInterface*>(root);
+                QByteArray utf8(iModule.toLocal8Bit());
+                const char* uri = utf8.constData();
+                QQmlExtensionInterface* ext =
+                    qobject_cast<QQmlExtensionInterface*>(root);
                 if (ext) {
-                    QByteArray str = iModule.toLocal8Bit();
-                    ext->registerTypes(str.constData());
+                    HDEBUG("Initialining ExtensionInterface" << uri);
+                    ext->initializeEngine(iEngine, uri);
+                    ext->registerTypes(uri);
+                } else {
+                    QQmlTypesExtensionInterface* types =
+                        qobject_cast<QQmlTypesExtensionInterface*>(root);
+                    if (types) {
+                        HDEBUG("Initialining TypesExtensionInterface" << uri);
+                        types->registerTypes(uri);
+                    }
                 }
             } else {
                 HWARN("Could not load" << qPrintable(iPlugin->fileName()));
