@@ -35,12 +35,7 @@
 
 #include <qqml.h>
 #include <QQmlEngine>
-#include <QQmlTypesExtensionInterface>
-
-#include <QStringList>
-#include <QPluginLoader>
-#include <QTextStream>
-#include <QFile>
+#include <QQmlComponent>
 
 // This hack allows (in some cases) to use prohibited QML imports by
 // re-registering them under a different name
@@ -58,6 +53,8 @@ public:
     int parserStatusCast() const;
     int propertyValueSourceCast() const;
     int propertyValueInterceptorCast() const;
+    QQmlAttachedPropertiesFunc attachedPropertiesFunction(QQmlEnginePrivate *engine) const;
+    const QMetaObject *attachedPropertiesType(QQmlEnginePrivate *engine) const;
 };
 
 // PRIVATE QT API!
@@ -86,8 +83,7 @@ public:
         const char* aModule, int aMajor, int aMinor);
 
 public:
-    bool iTypesRegistered;
-    QPluginLoader* iPlugin;
+    bool iLoaded;
     QQmlEngine* iEngine;
     QString iModule;
     int iMajor;
@@ -99,56 +95,39 @@ HarbourPluginLoader::Private::Private(
     QString aModule,
     int aMajor,
     int aMinor) :
-    iTypesRegistered(false),
-    iPlugin(pluginLoader(aEngine, aModule)),
+    iLoaded(false),
     iEngine(aEngine),
     iModule(aModule),
     iMajor(aMajor),
     iMinor(aMinor)
-{}
+{
+    // Load the actual import library
+    QQmlComponent* component = new QQmlComponent(iEngine);
+    component->setData(QString("import QtQuick 2.0\nimport %1 %2.%3\nQtObject {}").
+        arg(iModule).arg(iMajor).arg(iMinor).toUtf8(), QUrl());
+    if (component->status() == QQmlComponent::Ready) {
+        delete component->create();
+        iLoaded = true;
+    } else {
+        HWARN(component->errors());
+    }
+    delete component;
+}
 
 HarbourPluginLoader::Private::~Private()
 {
-    delete iPlugin;
 }
 
 QQmlType*
 HarbourPluginLoader::Private::qmlType(
     QString aName)
 {
-    if (iPlugin) {
-        if (!iTypesRegistered) {
-            iTypesRegistered = true;
-            QObject* root = iPlugin->instance();
-            if (root) {
-                QByteArray utf8(iModule.toLocal8Bit());
-                const char* uri = utf8.constData();
-                QQmlExtensionInterface* ext =
-                    qobject_cast<QQmlExtensionInterface*>(root);
-                if (ext) {
-                    HDEBUG("Initialining ExtensionInterface" << uri);
-                    ext->initializeEngine(iEngine, uri);
-                    ext->registerTypes(uri);
-                } else {
-                    QQmlTypesExtensionInterface* types =
-                        qobject_cast<QQmlTypesExtensionInterface*>(root);
-                    if (types) {
-                        HDEBUG("Initialining TypesExtensionInterface" << uri);
-                        types->registerTypes(uri);
-                    }
-                }
-            } else {
-                HWARN("Could not load" << qPrintable(iPlugin->fileName()));
-            }
-        }
-        QString fullName(iModule + '/' + aName);
-        QQmlType* type = QQmlMetaType::qmlType(fullName, iMajor, iMinor);
-        if (!type) {
-            HWARN("Failed to load" << fullName);
-        }
-        return type;
+    QString fullName(iModule + '/' + aName);
+    QQmlType* type = QQmlMetaType::qmlType(fullName, iMajor, iMinor);
+    if (!type) {
+        HWARN("Failed to load" << fullName);
     }
-    return NULL;
+    return type;
 }
 
 void
@@ -183,7 +162,7 @@ HarbourPluginLoader::Private::reRegisterType(
     int aMajor,
     int aMinor)
 {
-    if (aType) {
+    if (aType && iEngine) {
         QQmlPrivate::RegisterType type = {
             0, // int version;
             aType->typeId(),  // int typeId;
@@ -196,13 +175,8 @@ HarbourPluginLoader::Private::reRegisterType(
             aMinor, // int versionMinor;
             aQmlName, // const char *elementName;
             aType->metaObject(), // const QMetaObject *metaObject;
-#if 0 // We don't need those, it seems
-            aType->attachedPropertiesFunction(),
-            aType->attachedPropertiesType(),
-#else
-            Q_NULLPTR, // QQmlAttachedPropertiesFunc attachedPropertiesFunction;
-            Q_NULLPTR, // const QMetaObject *attachedPropertiesMetaObject;
-#endif
+            aType->attachedPropertiesFunction(NULL /*iEngine->d_func()*/),
+            aType->attachedPropertiesType(NULL /*iEngine->d_func()*/),
             aType->parserStatusCast(), // int parserStatusCast;
             aType->propertyValueSourceCast(), // int valueSourceCast;
             aType->propertyValueInterceptorCast(), // int valueInterceptorCast;
@@ -232,56 +206,6 @@ HarbourPluginLoader::~HarbourPluginLoader()
     delete iPrivate;
 }
 
-QPluginLoader*
-HarbourPluginLoader::pluginLoader(
-    QQmlEngine* aEngine,
-    QString aModule)
-{
-    QStringList pathList = aEngine->importPathList();
-    aModule.replace('.', '/');
-    const int n = pathList.count();
-    for (int i=0; i<n; i++) {
-        QString dir(pathList.at(i));
-        QPluginLoader* loader = pluginLoader(dir.append('/').append(aModule));
-        if (loader) {
-            if (loader->load()) {
-                HDEBUG("loaded" << qPrintable(loader->fileName()));
-                return loader;
-            } else {
-                HWARN("Failed to load" << qPrintable(loader->fileName()));
-                delete loader;
-            }
-        }
-    }
-    return NULL;
-}
-
-QPluginLoader*
-HarbourPluginLoader::pluginLoader(
-    QString aPluginDir)
-{
-    QString qmldir(QString(aPluginDir).append('/').append("qmldir"));
-    QFile f(qmldir);
-    if (f.open(QIODevice::ReadOnly)) {
-        QTextStream in(&f);
-        while (!in.atEnd()) {
-            static const QString plugin("plugin");
-            QString line = in.readLine();
-            if (line.indexOf(plugin) >= 0) {
-                QStringList parts = line.split(' ', QString::SkipEmptyParts);
-                if (parts.count() == 2 && parts.at(0) == plugin) {
-                    QString path(QString(aPluginDir).append("/lib").
-                        append(parts.at(1)).append(".so"));
-                    if (QFile::exists(path)) {
-                        return new QPluginLoader(path);
-                    }
-                }
-            }
-        }
-    }
-    return NULL;
-}
-
 void
 HarbourPluginLoader::reRegisterType(
     const char* aQmlName,
@@ -307,5 +231,5 @@ void HarbourPluginLoader::reRegisterType(
 bool
 HarbourPluginLoader::isValid() const
 {
-    return iPrivate->iPlugin != NULL;
+    return iPrivate->iLoaded;
 }

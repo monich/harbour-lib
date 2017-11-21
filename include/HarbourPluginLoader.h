@@ -66,9 +66,6 @@ class QPluginLoader;
 class HarbourPluginLoader
 {
 public:
-    static QPluginLoader* pluginLoader(QQmlEngine* aEngine, QString aModule);
-    static QPluginLoader* pluginLoader(QString aPluginDir);
-
     bool isValid() const;
 
 protected:
