@@ -46,6 +46,7 @@ HEADERS += \
   $$PUBLIC_HEADERS
 
 OTHER_FILES += \
+  LICENSE \
   rpm/harbour-lib-devel.spec
 
 headers.path = $$INSTALL_ROOT$$PREFIX/include/$$TARGET
