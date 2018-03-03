@@ -2,12 +2,12 @@ TEMPLATE = lib
 CONFIG += static
 TARGET = harbour-lib
 QT += dbus
-QT -= gui
+QT-= gui
 
 VERSION = 1.0
 
 greaterThan(QT_MAJOR_VERSION, 4) {
-QT += qml
+QT += qml quick
 } else {
 QT += declarative
 }
@@ -19,6 +19,7 @@ CONFIG(debug, debug|release) {
 }
 
 SOURCES += \
+    src/HarbourImageProvider.cpp \
     src/HarbourJson.cpp \
     src/HarbourLib.cpp \
     src/HarbourPluginLoader.cpp \
@@ -31,6 +32,7 @@ SOURCES += \
 INCLUDEPATH += include
 PUBLIC_HEADERS += \
     include/HarbourDebug.h \
+    include/HarbourImageProvider.h \
     include/HarbourJson.h \
     include/HarbourLib.h \
     include/HarbourPluginLoader.h \
