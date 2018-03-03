@@ -196,7 +196,7 @@ HarbourImageProvider::TextureFactory::createTexture(
 {
     if (!load().isNull()) {
         QSGTexture* texture = aWindow->createTextureFromImage(iImage,
-            QQuickWindow::TextureCanUseAtlas);
+            QQuickWindow::CreateTextureOption(0x0008) /* TextureCanUseAtlas */);
         if (qEnvironmentVariableIsSet("QSG_TRANSIENT_IMAGES")) {
             iImage = QImage();
         }
