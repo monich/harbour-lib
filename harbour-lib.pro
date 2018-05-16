@@ -19,9 +19,11 @@ CONFIG(debug, debug|release) {
 }
 
 SOURCES += \
+    src/HarbourDisplayBlanking.cpp \
     src/HarbourImageProvider.cpp \
     src/HarbourJson.cpp \
     src/HarbourLib.cpp \
+    src/HarbourMce.cpp \
     src/HarbourPluginLoader.cpp \
     src/HarbourSigChildHandler.cpp \
     src/HarbourSystemState.cpp \
@@ -32,6 +34,7 @@ SOURCES += \
 INCLUDEPATH += include
 PUBLIC_HEADERS += \
     include/HarbourDebug.h \
+    include/HarbourDisplayBlanking.h \
     include/HarbourImageProvider.h \
     include/HarbourJson.h \
     include/HarbourLib.h \
@@ -43,7 +46,8 @@ PUBLIC_HEADERS += \
     include/HarbourTransferMethodsModel.h
 
 HEADERS += \
-  $$PUBLIC_HEADERS
+  $$PUBLIC_HEADERS \
+  src/HarbourMce.h
 
 OTHER_FILES += \
   LICENSE \

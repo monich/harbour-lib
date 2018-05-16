@@ -8,13 +8,13 @@
  * modification, are permitted provided that the following conditions
  * are met:
  *
- *   * Redistributions of source code must retain the above copyright
+ *   - Redistributions of source code must retain the above copyright
  *     notice, this list of conditions and the following disclaimer.
- *   * Redistributions in binary form must reproduce the above copyright
+ *   - Redistributions in binary form must reproduce the above copyright
  *     notice, this list of conditions and the following disclaimer in
  *     the documentation and/or other materials provided with the
  *     distribution.
- *   * Neither the name of Jolla Ltd nor the names of its contributors
+ *   - Neither the name of Jolla Ltd nor the names of its contributors
  *     may be used to endorse or promote products derived from this
  *     software without specific prior written permission.
  *
@@ -31,30 +31,39 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "HarbourLib.h"
-#include "HarbourDebug.h"
-#include "HarbourDisplayBlanking.h"
-#include "HarbourSystemState.h"
-#include "HarbourTransferMethodsModel.h"
+#ifndef HARBOUR_DISPLAY_BLANKING_H
+#define HARBOUR_DISPLAY_BLANKING_H
 
-#if QT_VERSION >= 0x050000
-#  include <QtQml>
-#else
-#  include <QtDeclarative/qdeclarative.h>
-#endif
+#include <QObject>
+#include <QString>
+#include <QSharedPointer>
 
-QML_DECLARE_TYPE(HarbourDisplayBlanking)
-QML_DECLARE_TYPE(HarbourSystemState)
-QML_DECLARE_TYPE(HarbourTransferMethodsModel)
-
-void
-HarbourLib::registerTypes(
-    const char* aUri,
-    int aMajor,
-    int aMinor)
+class HarbourDisplayBlanking: public QObject
 {
-    HDEBUG(aUri << aMinor << aMajor);
-    qmlRegisterType<HarbourDisplayBlanking>(aUri, aMajor, aMinor, "DisplayBlanking");
-    qmlRegisterType<HarbourSystemState>(aUri, aMajor, aMinor, "SystemState");
-    qmlRegisterType<HarbourTransferMethodsModel>(aUri, aMajor, aMinor, "TransferMethodsModel");
-}
+    Q_OBJECT
+    Q_PROPERTY(bool paused READ paused NOTIFY pausedChanged)
+    Q_PROPERTY(bool pauseAllowed READ pauseAllowed NOTIFY pauseAllowedChanged)
+    Q_PROPERTY(bool pauseRequested READ pauseRequested WRITE setPauseRequested NOTIFY pauseRequestedChanged)
+
+public:
+    explicit HarbourDisplayBlanking(QObject* aParent = NULL);
+    ~HarbourDisplayBlanking();
+
+    static QSharedPointer<HarbourDisplayBlanking> sharedInstance();
+
+    bool paused() const;
+    bool pauseAllowed() const;
+    bool pauseRequested() const;
+    void setPauseRequested(bool value);
+
+Q_SIGNALS:
+    void pausedChanged();
+    void pauseAllowedChanged();
+    void pauseRequestedChanged();
+
+private:
+    class Private;
+    Private* iPrivate;
+};
+
+#endif // HARBOUR_DISPLAY_BLANKING_H

@@ -1,6 +1,6 @@
 /*
- * Copyright (C) 2015-2017 Jolla Ltd.
- * Copyright (C) 2015-2017 Slava Monich <slava.monich@jolla.com>
+ * Copyright (C) 2015-2018 Jolla Ltd.
+ * Copyright (C) 2015-2018 Slava Monich <slava.monich@jolla.com>
  *
  * You may use this file under the terms of the BSD license as follows:
  *
@@ -33,14 +33,13 @@
 
 #include "HarbourSystemState.h"
 #include "HarbourDebug.h"
+#include "HarbourMce.h"
 
 #include <QDBusMessage>
 #include <QDBusConnection>
 #include <QDBusPendingCall>
 #include <QDBusPendingCallWatcher>
 #include <QDBusPendingReply>
-
-#define MCE_SERVICE "com.nokia.mce"
 
 const QString HarbourSystemState::MCE_DISPLAY_ON("on");
 const QString HarbourSystemState::MCE_DISPLAY_DIM("dimmed");
@@ -51,8 +50,7 @@ const QString HarbourSystemState::MCE_TK_UNLOCKED("unlocked");
 // ==========================================================================
 // HarbourSystemState::Private
 // ==========================================================================
-class HarbourSystemState::Private : public QObject
-{
+class HarbourSystemState::Private : public HarbourMce {
     Q_OBJECT
 
 public:
@@ -67,8 +65,6 @@ public:
     bool locked() const;
 
 private:
-    void setupProperty(QString aQueryMethod, QString aSignal,
-        const char* aQuerySlot, const char* aSignalSlot);
     void setDisplayStatus(QString aStatus);
     void setLockMode(QString aStatus);
 
@@ -83,7 +79,7 @@ QWeakPointer<HarbourSystemState> HarbourSystemState::Private::sSharedInstance;
 
 HarbourSystemState::Private::Private(
     HarbourSystemState* aParent) :
-    QObject(aParent),
+    HarbourMce(aParent),
     iParent(aParent)
 {
     HDEBUG("created");
@@ -93,22 +89,6 @@ HarbourSystemState::Private::Private(
     setupProperty("get_tklock_mode", "tklock_mode_ind",
         SLOT(onLockModeQueryDone(QDBusPendingCallWatcher*)),
         SLOT(onLockModeChanged(QString)));
-}
-
-void
-HarbourSystemState::Private::setupProperty(
-    QString aQueryMethod,
-    QString aSignal,
-    const char* aQuerySlot,
-    const char* aSignalSlot)
-{
-    QDBusConnection systemBus(QDBusConnection::systemBus());
-    connect(new QDBusPendingCallWatcher(systemBus.asyncCall(
-        QDBusMessage::createMethodCall(MCE_SERVICE, "/com/nokia/mce/request",
-        "com.nokia.mce.request", aQueryMethod)), this),
-        SIGNAL(finished(QDBusPendingCallWatcher*)), this, aQuerySlot);
-    systemBus.connect(MCE_SERVICE, "/com/nokia/mce/signal",
-        "com.nokia.mce.signal", aSignal, this, aSignalSlot);
 }
 
 bool
