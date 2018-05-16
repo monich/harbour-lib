@@ -51,6 +51,8 @@ public:
     virtual ~HarbourTask();
 
     bool isStarted() const;
+    bool isCanceled() const;
+
     void submit();
     void submit(QObject* aTarget, const char* aSlot);
     void release(QObject* aHandler);
@@ -60,8 +62,6 @@ private:
     void released();
 
 protected:
-    bool isCanceled() const;
-
     virtual void run();
     virtual void performTask() = 0;
 
