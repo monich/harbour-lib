@@ -35,15 +35,44 @@
 #include "HarbourDebug.h"
 
 #include <QCoreApplication>
+#include <QThreadPool>
 
-HarbourTask::HarbourTask(QThreadPool* aPool) :
-    QObject(aPool),
+// ==========================================================================
+// HarbourTask::Private
+// ==========================================================================
+
+class HarbourTask::Private {
+public:
+    Private(QThreadPool* aPool);
+
+public:
+    QThreadPool* iPool;
+    bool iAboutToQuit;
+    bool iSubmitted;
+    bool iStarted;
+    bool iReleased;
+    bool iDone;
+};
+
+HarbourTask::Private::Private(QThreadPool* aPool) :
+    iPool(aPool),
     iAboutToQuit(false),
     iSubmitted(false),
     iStarted(false),
     iReleased(false),
     iDone(false)
 {
+}
+
+// ==========================================================================
+// HarbourTask
+// ==========================================================================
+
+HarbourTask::HarbourTask(QThreadPool* aPool, QThread* aTargetThread) :
+    QObject(aTargetThread ? NULL : aPool), // Cannot move objects with a parent
+    iPrivate(new Private(aPool))
+{
+    if (aTargetThread) moveToThread(aTargetThread);
     setAutoDelete(false);
     connect(qApp, SIGNAL(aboutToQuit()), SLOT(onAboutToQuit()));
     connect(this, SIGNAL(runFinished()), SLOT(onRunFinished()),
@@ -52,15 +81,29 @@ HarbourTask::HarbourTask(QThreadPool* aPool) :
 
 HarbourTask::~HarbourTask()
 {
-    HASSERT(iReleased);
-    if (iSubmitted) wait();
+    HASSERT(iPrivate->iReleased);
+    if (iPrivate->iSubmitted) wait();
+    delete iPrivate;
+}
+
+bool HarbourTask::isStarted() const
+{
+    return iPrivate->iStarted;
+}
+
+bool HarbourTask::isCanceled() const
+{
+    return iPrivate->iReleased || iPrivate->iAboutToQuit;
 }
 
 void HarbourTask::submit()
 {
-    HASSERT(!iSubmitted);
-    iSubmitted = true;
-    qobject_cast<QThreadPool*>(parent())->start(this);
+    HASSERT(!iPrivate->iSubmitted);
+    HASSERT(iPrivate->iPool);
+    if (iPrivate->iPool && !iPrivate->iSubmitted) {
+        iPrivate->iSubmitted = true;
+        iPrivate->iPool->start(this);
+    }
 }
 
 void HarbourTask::submit(QObject* aTarget, const char* aSlot)
@@ -83,28 +126,28 @@ void HarbourTask::release()
 
 void HarbourTask::released()
 {
-    iReleased = true;
-    if (!iSubmitted || iDone) {
+    iPrivate->iReleased = true;
+    if (!iPrivate->iSubmitted || iPrivate->iDone) {
         delete this;
     }
 }
 
 void HarbourTask::run()
 {
-    HASSERT(!iStarted);
-    iStarted = true;
+    HASSERT(!iPrivate->iStarted);
+    iPrivate->iStarted = true;
     performTask();
     Q_EMIT runFinished();
 }
 
 void HarbourTask::onRunFinished()
 {
-    HASSERT(!iDone);
-    if (!iReleased) {
+    HASSERT(!iPrivate->iDone);
+    if (!iPrivate->iReleased) {
         Q_EMIT done();
     }
-    iDone = true;
-    if (iReleased) {
+    iPrivate->iDone = true;
+    if (iPrivate->iReleased) {
         delete this;
     }
 }
@@ -112,5 +155,5 @@ void HarbourTask::onRunFinished()
 void HarbourTask::onAboutToQuit()
 {
     HDEBUG("OK");
-    iAboutToQuit = true;
+    iPrivate->iAboutToQuit = true;
 }

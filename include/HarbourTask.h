@@ -36,16 +36,18 @@
 
 #include <QObject>
 #include <QRunnable>
-#include <QThreadPool>
+
+class QThread;
+class QThreadPool;
 
 /**
- * A Runnable that queues done() signal to the main thread when it's done.
+ * A Runnable that queues done() signal to the target thread when it's done.
  */
 class HarbourTask : public QObject, public QRunnable {
     Q_OBJECT
 
 protected:
-    HarbourTask(QThreadPool* aPool);
+    HarbourTask(QThreadPool* aPool, QThread* aTargetThread = NULL);
 
 public:
     virtual ~HarbourTask();
@@ -74,16 +76,8 @@ private Q_SLOTS:
     void onRunFinished();
 
 private:
-    bool iAboutToQuit;
-    bool iSubmitted;
-    bool iStarted;
-    bool iReleased;
-    bool iDone;
+    class Private;
+    Private* iPrivate;
 };
-
-inline bool HarbourTask::isStarted() const
-    { return iStarted; }
-inline bool HarbourTask::isCanceled() const
-    { return iReleased || iAboutToQuit; }
 
 #endif // HARBOUR_TASK_H
