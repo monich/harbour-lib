@@ -151,9 +151,11 @@ HarbourDisplayBlanking::Private::onDisplayBlankingPauseQueryDone(
     QDBusPendingCallWatcher* aWatcher)
 {
     QDBusPendingReply<QString> reply(*aWatcher);
-    HDEBUG(reply);
     if (reply.isValid() && !reply.isError()) {
+        HDEBUG(reply);
         updateDisplayBlankingPause(reply.value());
+    } else {
+        HWARN(reply.error());
     }
     aWatcher->deleteLater();
 }
@@ -163,9 +165,12 @@ HarbourDisplayBlanking::Private::onDisplayBlankingPauseAllowedQueryDone(
     QDBusPendingCallWatcher* aWatcher)
 {
     QDBusPendingReply<bool> reply(*aWatcher);
-    HDEBUG(reply);
     if (reply.isValid() && !reply.isError()) {
+        HDEBUG(reply);
         updateDisplayBlankingAllowed(reply.value());
+    } else {
+        HWARN(reply.error());
+        updateDisplayBlankingAllowed(true);
     }
     aWatcher->deleteLater();
 }
