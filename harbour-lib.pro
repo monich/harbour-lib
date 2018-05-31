@@ -20,11 +20,9 @@ CONFIG(debug, debug|release) {
 
 SOURCES += \
     src/HarbourDisplayBlanking.cpp \
-    src/HarbourImageProvider.cpp \
     src/HarbourJson.cpp \
     src/HarbourLib.cpp \
     src/HarbourMce.cpp \
-    src/HarbourPluginLoader.cpp \
     src/HarbourSigChildHandler.cpp \
     src/HarbourSystemState.cpp \
     src/HarbourTask.cpp \
@@ -32,20 +30,30 @@ SOURCES += \
     src/HarbourTransferMethodInfo.cpp \
     src/HarbourTransferMethodsModel.cpp
 
+greaterThan(QT_MAJOR_VERSION, 4) {
+SOURCES += \
+    src/HarbourImageProvider.cpp \
+    src/HarbourPluginLoader.cpp
+}
+
 INCLUDEPATH += include
 PUBLIC_HEADERS += \
     include/HarbourDebug.h \
     include/HarbourDisplayBlanking.h \
-    include/HarbourImageProvider.h \
     include/HarbourJson.h \
     include/HarbourLib.h \
-    include/HarbourPluginLoader.h \
     include/HarbourSigChildHandler.h \
     include/HarbourSystemState.h \
     include/HarbourTask.h \
     include/HarbourTemporaryFile.h \
     include/HarbourTransferMethodInfo.h \
     include/HarbourTransferMethodsModel.h
+
+greaterThan(QT_MAJOR_VERSION, 4) {
+PUBLIC_HEADERS += \
+    include/HarbourImageProvider.h \
+    include/HarbourPluginLoader.h
+}
 
 HEADERS += \
   $$PUBLIC_HEADERS \
