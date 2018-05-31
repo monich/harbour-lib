@@ -28,6 +28,7 @@ SOURCES += \
     src/HarbourSigChildHandler.cpp \
     src/HarbourSystemState.cpp \
     src/HarbourTask.cpp \
+    src/HarbourTemporaryFile.cpp \
     src/HarbourTransferMethodInfo.cpp \
     src/HarbourTransferMethodsModel.cpp
 
@@ -42,6 +43,7 @@ PUBLIC_HEADERS += \
     include/HarbourSigChildHandler.h \
     include/HarbourSystemState.h \
     include/HarbourTask.h \
+    include/HarbourTemporaryFile.h \
     include/HarbourTransferMethodInfo.h \
     include/HarbourTransferMethodsModel.h
 
