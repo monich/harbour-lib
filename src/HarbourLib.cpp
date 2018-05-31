@@ -35,6 +35,7 @@
 #include "HarbourDebug.h"
 #include "HarbourDisplayBlanking.h"
 #include "HarbourSystemState.h"
+#include "HarbourTemporaryFile.h"
 #include "HarbourTransferMethodsModel.h"
 
 #if QT_VERSION >= 0x050000
@@ -46,6 +47,7 @@
 QML_DECLARE_TYPE(HarbourDisplayBlanking)
 QML_DECLARE_TYPE(HarbourSystemState)
 QML_DECLARE_TYPE(HarbourTransferMethodsModel)
+QML_DECLARE_TYPE(HarbourTemporaryFile)
 
 void
 HarbourLib::registerTypes(
@@ -56,5 +58,6 @@ HarbourLib::registerTypes(
     HDEBUG(aUri << aMinor << aMajor);
     qmlRegisterType<HarbourDisplayBlanking>(aUri, aMajor, aMinor, "DisplayBlanking");
     qmlRegisterType<HarbourSystemState>(aUri, aMajor, aMinor, "SystemState");
+    qmlRegisterType<HarbourTemporaryFile>(aUri, aMajor, aMinor, "TemporaryFile");
     qmlRegisterType<HarbourTransferMethodsModel>(aUri, aMajor, aMinor, "TransferMethodsModel");
 }
