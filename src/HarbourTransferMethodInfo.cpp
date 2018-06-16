@@ -1,6 +1,6 @@
 /*
- * Copyright (C) 2016 Jolla Ltd.
- * Contact: Slava Monich <slava.monich@jolla.com>
+ * Copyright (C) 2016-2018 Jolla Ltd.
+ * Copyright (C) 2016-2018 Slava Monich <slava.monich@jolla.com>
  *
  * You may use this file under the terms of BSD license as follows:
  *
@@ -31,6 +31,10 @@
  */
 
 #include "HarbourTransferMethodInfo.h"
+
+// ==========================================================================
+// HarbourTransferMethodInfo
+// ==========================================================================
 
 QDBusArgument &operator<<(QDBusArgument& aArg, const HarbourTransferMethodInfo& aInfo)
 {
@@ -90,4 +94,87 @@ void HarbourTransferMethodInfo::registerTypes()
 {
     qDBusRegisterMetaType<HarbourTransferMethodInfo>();
     qDBusRegisterMetaType<HarbourTransferMethodInfoList>();
+}
+
+// ==========================================================================
+// HarbourTransferMethodInfo2
+// ==========================================================================
+
+QDBusArgument &operator<<(QDBusArgument& aArg, const HarbourTransferMethodInfo2& aInfo)
+{
+    aArg.beginStructure();
+    aArg << aInfo.displayName << aInfo.userName << aInfo.methodId
+         << aInfo.shareUIPath << aInfo.capabilitities << aInfo.accountId
+         << aInfo.accountIcon << aInfo.hints;
+    aArg.endStructure();
+    return aArg;
+}
+
+const QDBusArgument &operator>>(const QDBusArgument& aArg, HarbourTransferMethodInfo2& aInfo)
+{
+    aArg.beginStructure();
+    aArg >> aInfo.displayName >> aInfo.userName >> aInfo.methodId
+         >> aInfo.shareUIPath >> aInfo.capabilitities >> aInfo.accountId
+         >> aInfo.accountIcon >> aInfo.hints;
+    aArg.endStructure();
+    return aArg;
+}
+
+HarbourTransferMethodInfo2::HarbourTransferMethodInfo2():
+    accountId(0)
+{
+}
+
+HarbourTransferMethodInfo2::HarbourTransferMethodInfo2(const HarbourTransferMethodInfo2& aInfo):
+    displayName(aInfo.displayName),
+    userName(aInfo.userName),
+    methodId(aInfo.methodId),
+    shareUIPath(aInfo.shareUIPath),
+    capabilitities(aInfo.capabilitities),
+    accountId(aInfo.accountId),
+    accountIcon(aInfo.accountIcon),
+    hints(aInfo.hints)
+{
+}
+
+HarbourTransferMethodInfo2::HarbourTransferMethodInfo2(const HarbourTransferMethodInfo& aInfo):
+    displayName(aInfo.displayName),
+    userName(aInfo.userName),
+    methodId(aInfo.methodId),
+    shareUIPath(aInfo.shareUIPath),
+    capabilitities(aInfo.capabilitities),
+    accountId(aInfo.accountId)
+{
+}
+
+HarbourTransferMethodInfo2& HarbourTransferMethodInfo2::operator=(const HarbourTransferMethodInfo2& aInfo)
+{
+    displayName    = aInfo.displayName;
+    userName       = aInfo.userName;
+    methodId       = aInfo.methodId;
+    shareUIPath    = aInfo.shareUIPath;
+    capabilitities = aInfo.capabilitities;
+    accountId      = aInfo.accountId;
+    accountIcon    = aInfo.accountIcon;
+    hints          = aInfo.hints;
+    return *this;
+}
+
+bool HarbourTransferMethodInfo2::equals(const HarbourTransferMethodInfo2& aInfo) const
+{
+    return displayName    == aInfo.displayName    &&
+           userName       == aInfo.userName       &&
+           methodId       == aInfo.methodId       &&
+           shareUIPath    == aInfo.shareUIPath    &&
+           capabilitities == aInfo.capabilitities &&
+           accountId      == aInfo.accountId      &&
+           accountIcon    == aInfo.accountIcon    &&
+           hints          == aInfo.hints;
+}
+
+void HarbourTransferMethodInfo2::registerTypes()
+{
+    HarbourTransferMethodInfo::registerTypes();
+    qDBusRegisterMetaType<HarbourTransferMethodInfo2>();
+    qDBusRegisterMetaType<HarbourTransferMethodInfo2List>();
 }

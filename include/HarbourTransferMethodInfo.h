@@ -1,6 +1,6 @@
 /*
- * Copyright (C) 2016 Jolla Ltd.
- * Contact: Slava Monich <slava.monich@jolla.com>
+ * Copyright (C) 2016-2018 Jolla Ltd.
+ * Copyright (C) 2016-2018 Slava Monich <slava.monich@jolla.com>
  *
  * You may use this file under the terms of BSD license as follows:
  *
@@ -35,6 +35,7 @@
 
 #include <QStringList>
 #include <QtDBus/QtDBus>
+#include <QVariantHash>
 
 class HarbourTransferMethodInfo
 {
@@ -67,5 +68,41 @@ const QDBusArgument& operator>>(const QDBusArgument& aArg, HarbourTransferMethod
 
 Q_DECLARE_METATYPE(HarbourTransferMethodInfo)
 Q_DECLARE_METATYPE(QList<HarbourTransferMethodInfo>)
+
+// Extended transfer method info (available since Sailfish OS 2.2.0)
+class HarbourTransferMethodInfo2
+{
+public:
+    HarbourTransferMethodInfo2();
+    HarbourTransferMethodInfo2(const HarbourTransferMethodInfo& aInfo);
+    HarbourTransferMethodInfo2(const HarbourTransferMethodInfo2& aInfo);
+    HarbourTransferMethodInfo2& operator=(const HarbourTransferMethodInfo2& aInfo);
+    bool operator==(const HarbourTransferMethodInfo2& Info) const;
+    bool operator!=(const HarbourTransferMethodInfo2& Info) const;
+    bool equals(const HarbourTransferMethodInfo2& Info) const;
+
+    static void registerTypes();
+
+    QString displayName;
+    QString userName;
+    QString methodId;
+    QString shareUIPath;
+    QStringList capabilitities;
+    quint32 accountId;
+    QString accountIcon;
+    QVariantHash hints;
+};
+
+inline bool HarbourTransferMethodInfo2::operator==(const HarbourTransferMethodInfo2& aInfo) const
+    { return equals(aInfo); }
+inline bool HarbourTransferMethodInfo2::operator!=(const HarbourTransferMethodInfo2& aInfo) const
+    { return !equals(aInfo); }
+
+typedef QList<HarbourTransferMethodInfo2> HarbourTransferMethodInfo2List;
+QDBusArgument& operator<<(QDBusArgument& aArg, const HarbourTransferMethodInfo2& aInfo);
+const QDBusArgument& operator>>(const QDBusArgument& aArg, HarbourTransferMethodInfo2& aInfo);
+
+Q_DECLARE_METATYPE(HarbourTransferMethodInfo2)
+Q_DECLARE_METATYPE(QList<HarbourTransferMethodInfo2>)
 
 #endif // HARBOUR_TRANSFER_METHOD_INFO_H

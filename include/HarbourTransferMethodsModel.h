@@ -1,6 +1,6 @@
 /*
- * Copyright (C) 2016-2017 Jolla Ltd.
- * Contact: Slava Monich <slava.monich@jolla.com>
+ * Copyright (C) 2016-2018 Jolla Ltd.
+ * Copyright (C) 2016-2018 Slava Monich <slava.monich@jolla.com>
  *
  * You may use this file under the terms of BSD license as follows:
  *
@@ -44,6 +44,8 @@ class HarbourTransferMethodsModel: public QAbstractListModel
     Q_OBJECT
     Q_PROPERTY(int count READ count NOTIFY countChanged)
     Q_PROPERTY(QString filter READ filter WRITE setFilter NOTIFY filterChanged)
+    Q_PROPERTY(bool accountIconSupported READ accountIconSupported NOTIFY accountIconSupportedChanged)
+    typedef void (HarbourTransferMethodsModel::*RequestUpdate)();
 
 public:
     enum TransferMethodsRole {
@@ -51,7 +53,8 @@ public:
         UserNameRole,
         MethodIdRole,
         ShareUIPathRole,
-        AccountIdRole
+        AccountIdRole,
+        AccountIconRole
     };
 
 public:
@@ -63,6 +66,7 @@ public:
     int count() const;
     QString filter() const;
     void setFilter(QString filter);
+    bool accountIconSupported() const;
 
     int rowCount(const QModelIndex& aParent) const;
     QVariant data(const QModelIndex& aIndex, int aRole) const;
@@ -73,21 +77,30 @@ protected:
 private:
     void filterModel();
     static QRegExp regExp(QString aRegExp);
+    void checkTransferMethods();
+    void requestTransferMethods();
+    void requestTransferMethods2();
+    void setTransferMethods2(HarbourTransferMethodInfo2List aList);
 
 private Q_SLOTS:
-    void requestUpdate();
+    void onTransferMethodsCheckFinished(QDBusPendingCallWatcher* aWatch);
     void onTransferMethodsFinished(QDBusPendingCallWatcher* aWatch);
+    void onTransferMethods2Finished(QDBusPendingCallWatcher* aWatch);
+    void onTransferMethodListChanged();
 
 Q_SIGNALS:
     void countChanged();
     void filterChanged();
+    void accountIconSupportedChanged();
 
 private:
     class TransferEngine;
     TransferEngine* iTransferEngine;
     QString iFilter;
-    QList<HarbourTransferMethodInfo> iMethodList;
+    QList<HarbourTransferMethodInfo2> iMethodList;
     QList<int> iFilteredList;
+    bool iAccountIconSupported;
+    RequestUpdate iRequestUpdate;
 };
 
 #endif // HARBOUR_TRANSFER_METHODS_MODEL_H
