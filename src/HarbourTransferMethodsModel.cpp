@@ -72,13 +72,14 @@ const char HarbourTransferMethodsModel::TransferEngine::INTERFACE[] = "org.nemo.
 HarbourTransferMethodsModel::HarbourTransferMethodsModel(QObject* aParent):
     QAbstractListModel(aParent),
     iAccountIconSupported(false),
-    iRequestUpdate(&HarbourTransferMethodsModel::checkTransferMethods)
+    iRequestUpdate(&HarbourTransferMethodsModel::checkTransferMethods),
+    iUpdateWatcher(NULL)
 {
     iTransferEngine = new TransferEngine(this);
     connect(iTransferEngine,
         SIGNAL(transferMethodListChanged()),
-        SLOT(onTransferMethodListChanged()));
-    checkTransferMethods();
+        SLOT(requestUpdate()));
+    requestUpdate();
 }
 
 HarbourTransferMethodsModel::~HarbourTransferMethodsModel()
@@ -97,62 +98,15 @@ bool HarbourTransferMethodsModel::loadTranslations(QTranslator* aTranslator, QLo
     }
 }
 
-void HarbourTransferMethodsModel::onTransferMethodListChanged()
+void HarbourTransferMethodsModel::requestUpdate()
 {
-    (this->*iRequestUpdate)();
-}
-
-void HarbourTransferMethodsModel::checkTransferMethods()
-{
-    // First try transferMethods2() and see if it works
-    connect(new QDBusPendingCallWatcher(
-        iTransferEngine->transferMethods2(), this),
-        SIGNAL(finished(QDBusPendingCallWatcher*)),
-        SLOT(onTransferMethodsCheckFinished(QDBusPendingCallWatcher*)));
-}
-
-void HarbourTransferMethodsModel::requestTransferMethods()
-{
-    connect(new QDBusPendingCallWatcher(
-        iTransferEngine->transferMethods(), this),
-        SIGNAL(finished(QDBusPendingCallWatcher*)),
-        SLOT(onTransferMethodsFinished(QDBusPendingCallWatcher*)));
-}
-
-void HarbourTransferMethodsModel::requestTransferMethods2()
-{
-    connect(new QDBusPendingCallWatcher(
-        iTransferEngine->transferMethods2(), this),
-        SIGNAL(finished(QDBusPendingCallWatcher*)),
-        SLOT(onTransferMethods2Finished(QDBusPendingCallWatcher*)));
-}
-
-void HarbourTransferMethodsModel::onTransferMethodsCheckFinished(QDBusPendingCallWatcher* aWatch)
-{
-    QDBusPendingReply<HarbourTransferMethodInfo2List> reply(*aWatch);
-    aWatch->deleteLater();
-    if (reply.isError()) {
-        QDBusError error(reply.error());
-        qWarning() << error;
-        if (error.type() == QDBusError::UnknownMethod) {
-            // Switch to the legacy interface
-            iRequestUpdate = &HarbourTransferMethodsModel::requestTransferMethods;
-            requestTransferMethods();
-        }
-    } else {
-        setTransferMethods2(reply.value());
+    if (iUpdateWatcher) {
+        HDEBUG("dropping pending call");
+        iUpdateWatcher->disconnect(this);
+        delete iUpdateWatcher;
+        iUpdateWatcher = NULL;
     }
-}
-
-void HarbourTransferMethodsModel::onTransferMethods2Finished(QDBusPendingCallWatcher* aWatch)
-{
-    QDBusPendingReply<HarbourTransferMethodInfo2List> reply(*aWatch);
-    aWatch->deleteLater();
-    if (reply.isError()) {
-        qWarning() << reply.error();
-    } else {
-        setTransferMethods2(reply.value());
-    }
+    iUpdateWatcher = (this->*iRequestUpdate)();
 }
 
 void HarbourTransferMethodsModel::setTransferMethods2(HarbourTransferMethodInfo2List aList)
@@ -169,10 +123,72 @@ void HarbourTransferMethodsModel::setTransferMethods2(HarbourTransferMethodInfo2
     }
 }
 
+QDBusPendingCallWatcher* HarbourTransferMethodsModel::checkTransferMethods()
+{
+    // First try transferMethods2() and see if it works
+    QDBusPendingCallWatcher* watcher = new QDBusPendingCallWatcher
+        (iTransferEngine->transferMethods2(), this);
+    connect(watcher, SIGNAL(finished(QDBusPendingCallWatcher*)),
+        SLOT(onTransferMethodsCheckFinished(QDBusPendingCallWatcher*)));
+    return watcher;
+}
+
+QDBusPendingCallWatcher* HarbourTransferMethodsModel::requestTransferMethods()
+{
+    QDBusPendingCallWatcher* watcher = new QDBusPendingCallWatcher
+        (iTransferEngine->transferMethods(), this);
+    connect(watcher, SIGNAL(finished(QDBusPendingCallWatcher*)),
+        SLOT(onTransferMethodsFinished(QDBusPendingCallWatcher*)));
+    return watcher;
+}
+
+QDBusPendingCallWatcher* HarbourTransferMethodsModel::requestTransferMethods2()
+{
+    QDBusPendingCallWatcher* watcher = new QDBusPendingCallWatcher
+        (iTransferEngine->transferMethods2(), this);
+    connect(watcher, SIGNAL(finished(QDBusPendingCallWatcher*)),
+        SLOT(onTransferMethods2Finished(QDBusPendingCallWatcher*)));
+    return watcher;
+}
+
+void HarbourTransferMethodsModel::onTransferMethodsCheckFinished(QDBusPendingCallWatcher* aWatch)
+{
+    QDBusPendingReply<HarbourTransferMethodInfo2List> reply(*aWatch);
+    aWatch->deleteLater();
+    HASSERT(aWatch == iUpdateWatcher);
+    iUpdateWatcher = NULL;
+    if (reply.isError()) {
+        QDBusError error(reply.error());
+        qWarning() << error;
+        if (error.type() == QDBusError::UnknownMethod) {
+            // Switch to the legacy interface
+            iRequestUpdate = &HarbourTransferMethodsModel::requestTransferMethods;
+            requestUpdate();
+        }
+    } else {
+        setTransferMethods2(reply.value());
+    }
+}
+
+void HarbourTransferMethodsModel::onTransferMethods2Finished(QDBusPendingCallWatcher* aWatch)
+{
+    QDBusPendingReply<HarbourTransferMethodInfo2List> reply(*aWatch);
+    aWatch->deleteLater();
+    HASSERT(aWatch == iUpdateWatcher);
+    iUpdateWatcher = NULL;
+    if (reply.isError()) {
+        qWarning() << reply.error();
+    } else {
+        setTransferMethods2(reply.value());
+    }
+}
+
 void HarbourTransferMethodsModel::onTransferMethodsFinished(QDBusPendingCallWatcher* aWatch)
 {
     QDBusPendingReply<HarbourTransferMethodInfoList> reply(*aWatch);
     aWatch->deleteLater();
+    HASSERT(aWatch == iUpdateWatcher);
+    iUpdateWatcher = NULL;
     if (reply.isError()) {
         qWarning() << reply.error();
     } else {

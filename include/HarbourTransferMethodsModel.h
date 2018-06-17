@@ -45,7 +45,7 @@ class HarbourTransferMethodsModel: public QAbstractListModel
     Q_PROPERTY(int count READ count NOTIFY countChanged)
     Q_PROPERTY(QString filter READ filter WRITE setFilter NOTIFY filterChanged)
     Q_PROPERTY(bool accountIconSupported READ accountIconSupported NOTIFY accountIconSupportedChanged)
-    typedef void (HarbourTransferMethodsModel::*RequestUpdate)();
+    typedef QDBusPendingCallWatcher* (HarbourTransferMethodsModel::*RequestUpdate)();
 
 public:
     enum TransferMethodsRole {
@@ -77,16 +77,16 @@ protected:
 private:
     void filterModel();
     static QRegExp regExp(QString aRegExp);
-    void checkTransferMethods();
-    void requestTransferMethods();
-    void requestTransferMethods2();
+    QDBusPendingCallWatcher* checkTransferMethods();
+    QDBusPendingCallWatcher* requestTransferMethods();
+    QDBusPendingCallWatcher* requestTransferMethods2();
     void setTransferMethods2(HarbourTransferMethodInfo2List aList);
 
 private Q_SLOTS:
     void onTransferMethodsCheckFinished(QDBusPendingCallWatcher* aWatch);
     void onTransferMethodsFinished(QDBusPendingCallWatcher* aWatch);
     void onTransferMethods2Finished(QDBusPendingCallWatcher* aWatch);
-    void onTransferMethodListChanged();
+    void requestUpdate();
 
 Q_SIGNALS:
     void countChanged();
@@ -101,6 +101,7 @@ private:
     QList<int> iFilteredList;
     bool iAccountIconSupported;
     RequestUpdate iRequestUpdate;
+    QDBusPendingCallWatcher* iUpdateWatcher;
 };
 
 #endif // HARBOUR_TRANSFER_METHODS_MODEL_H
