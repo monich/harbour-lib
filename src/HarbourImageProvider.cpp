@@ -2,7 +2,7 @@
  * Copyright (C) 2018 Jolla Ltd.
  * Copyright (C) 2018 Slava Monich <slava@monich.com>
  *
- * You may use this file under the terms of the BSD license as follows:
+ * You may use this file under the terms of BSD license as follows:
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -11,92 +11,31 @@
  *   1. Redistributions of source code must retain the above copyright
  *      notice, this list of conditions and the following disclaimer.
  *   2. Redistributions in binary form must reproduce the above copyright
- *      notice, this list of conditions and the following disclaimer in
- *      the documentation and/or other materials provided with the
- *      distribution.
- *   3. Neither the name of Jolla Ltd nor the names of its contributors
- *      may be used to endorse or promote products derived from this
- *      software without specific prior written permission.
+ *      notice, this list of conditions and the following disclaimer in the
+ *      documentation and/or other materials provided with the distribution.
+ *   3. Neither the names of the copyright holders nor the names of its
+ *      contributors may be used to endorse or promote products derived from
+ *      this software without specific prior written permission.
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDERS OR CONTRIBUTORS
+ * BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
+ * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
 #include "HarbourImageProvider.h"
+#include "HarbourTheme.h"
 #include "HarbourDebug.h"
 
 #include <QImageReader>
 #include <QQuickWindow>
-
-#include <dlfcn.h>
-
-#define SILICA_SO "/usr/lib/libsailfishsilica.so.1"
-#define SILICA_FUNCTIONS(f) \
-    f("_ZN6Silica5Theme8instanceEv", /* Silica::Theme* Silica::Theme::instance() */ \
-        HarbourImageProvider::Theme*, Instance,()) \
-    f("_ZNK6Silica5Theme5styleEv", /* Silica::Style  Silica::Theme::style() const */ \
-        HarbourImageProvider::Theme::Style, Style,(HarbourImageProvider::Theme*)) \
-    f("_ZNK6Silica5Theme12primaryColorEv", /* QColor Silica::Theme::primaryColor() const */ \
-        QColor, PrimaryColor,(HarbourImageProvider::Theme*))
-
-// ==========================================================================
-// HarbourImageProvider::Theme
-// ==========================================================================
-
-class HarbourImageProvider::Theme
-{
-public:
-    enum Style {
-        StyleLight,
-        StyleDark
-    };
-
-    typedef struct _SilicaFunctions {
-    #define SILICA_TYPEDEF(sym,ret,name,args) ret (*name) args;
-    SILICA_FUNCTIONS(SILICA_TYPEDEF)
-    } SilicaFunctions;
-
-    static Theme* instance();
-    static Style style(Theme* theme);
-
-public:
-    static void* gHandle;
-    static SilicaFunctions gSilica;
-};
-
-void* HarbourImageProvider::Theme::gHandle = NULL;
-HarbourImageProvider::Theme::SilicaFunctions HarbourImageProvider::Theme::gSilica;
-
-static const char* SilicaSymbols[] = {
-#define SILICA_SYMBOL(sym,ret,name,args) sym,
-    SILICA_FUNCTIONS(SILICA_SYMBOL)
-};
-
-#define _N(a) (sizeof(a)/sizeof((a)[0]))
-#define NUM_FUNCTIONS _N(SilicaSymbols)
-Q_STATIC_ASSERT(sizeof(HarbourImageProvider::Theme::SilicaFunctions) == NUM_FUNCTIONS*sizeof(void*));
-
-HarbourImageProvider::Theme*
-HarbourImageProvider::Theme::instance()
-{
-    return gSilica.Instance ? gSilica.Instance() : NULL;
-}
-
-HarbourImageProvider::Theme::Style
-HarbourImageProvider::Theme::style(
-    Theme* aTheme)
-{
-    return (aTheme && gSilica.Style) ? gSilica.Style(aTheme) : StyleDark;
-}
 
 // ==========================================================================
 // HarbourImageProvider::TextureFactory
@@ -107,7 +46,7 @@ class HarbourImageProvider::TextureFactory : public QQuickTextureFactory
 public:
     TextureFactory(QString aPath, QSize requestedSize);
 
-    QSGTexture *createTexture(QQuickWindow *window) const Q_DECL_OVERRIDE;
+    QSGTexture* createTexture(QQuickWindow* aWindow) const Q_DECL_OVERRIDE;
     QSize textureSize() const Q_DECL_OVERRIDE;
     int textureByteCount() const Q_DECL_OVERRIDE;
     QImage image() const Q_DECL_OVERRIDE;
@@ -120,6 +59,7 @@ private:
     QString iHighlight;
     QSize iRequestedSize;
     mutable QImage iImage;
+    HarbourTheme iTheme;
 };
 
 HarbourImageProvider::TextureFactory::TextureFactory(
@@ -147,14 +87,13 @@ HarbourImageProvider::TextureFactory::load() const
             imageReader.setScaledSize(iRequestedSize);
         }
         if (imageReader.read(&iImage) && !iImage.isNull()) {
-            HDEBUG("loaded" << qPrintable(iPath));
             if (iHighlight.isEmpty()) {
-                // Invert grayscale icon colors on inverted ambience
-                Theme* theme = Theme::instance();
-                if (Theme::style(theme) == Theme::StyleLight &&
-                    iImage.isGrayscale() &&
-                    Theme::gSilica.PrimaryColor) {
-                    iImage = colorize(iImage, Theme::gSilica.PrimaryColor(theme));
+                // Colorize grayscale to match ambience
+                if (iImage.isGrayscale()) {
+                    QColor primaryColor(iTheme.primaryColor());
+                    if (primaryColor.isValid()) {
+                        iImage = colorize(iImage, primaryColor);
+                    }
                 }
             } else {
                 // Colorization required
@@ -254,16 +193,6 @@ HarbourImageProvider::TextureFactory::colorize(
 HarbourImageProvider::HarbourImageProvider() :
     QQuickImageProvider(QQuickImageProvider::Texture)
 {
-    if (!Theme::gHandle) {
-        Theme::gHandle = dlopen(SILICA_SO, RTLD_LAZY);
-        if (Theme::gHandle) {
-            void** ptr = (void**)&Theme::gSilica;
-            for (uint i = 0; i < NUM_FUNCTIONS; i++) {
-                ptr[i] = dlsym(Theme::gHandle, SilicaSymbols[i]);
-                HDEBUG(SilicaSymbols[i] << (ptr[i] ? "OK" : "missing"));
-            }
-        }
-    }
 }
 
 QQuickTextureFactory*
