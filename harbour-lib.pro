@@ -33,7 +33,8 @@ SOURCES += \
 greaterThan(QT_MAJOR_VERSION, 4) {
 SOURCES += \
     src/HarbourImageProvider.cpp \
-    src/HarbourPluginLoader.cpp
+    src/HarbourPluginLoader.cpp \
+    src/HarbourTheme.cpp
 }
 
 INCLUDEPATH += include
@@ -52,7 +53,8 @@ PUBLIC_HEADERS += \
 greaterThan(QT_MAJOR_VERSION, 4) {
 PUBLIC_HEADERS += \
     include/HarbourImageProvider.h \
-    include/HarbourPluginLoader.h
+    include/HarbourPluginLoader.h \
+    include/HarbourTheme.h
 }
 
 HEADERS += \
