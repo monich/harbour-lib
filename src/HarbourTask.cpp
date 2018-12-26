@@ -47,6 +47,7 @@ public:
 
 public:
     QThreadPool* iPool;
+    QObject* iTarget;
     bool iAboutToQuit;
     bool iSubmitted;
     bool iStarted;
@@ -56,6 +57,7 @@ public:
 
 HarbourTask::Private::Private(QThreadPool* aPool) :
     iPool(aPool),
+    iTarget(NULL),
     iAboutToQuit(false),
     iSubmitted(false),
     iStarted(false),
@@ -108,18 +110,26 @@ void HarbourTask::submit()
 
 void HarbourTask::submit(QObject* aTarget, const char* aSlot)
 {
+    HASSERT(!iPrivate->iTarget);
+    iPrivate->iTarget = aTarget;
+    connect(aTarget, SIGNAL(destroyed(QObject*)), SLOT(onTargetDestroyed(QObject*)));
     aTarget->connect(this, SIGNAL(done()), aSlot);
     submit();
 }
 
 void HarbourTask::release(QObject* aHandler)
 {
+    aHandler->disconnect(this);
     disconnect(aHandler);
     released();
 }
 
 void HarbourTask::release()
 {
+    if (iPrivate->iTarget) {
+        iPrivate->iTarget->disconnect(this);
+        disconnect(iPrivate->iTarget);
+    }
     released();
 }
 
@@ -155,4 +165,13 @@ void HarbourTask::onAboutToQuit()
 {
     HDEBUG("OK");
     iPrivate->iAboutToQuit = true;
+}
+
+void HarbourTask::onTargetDestroyed(QObject* aObject)
+{
+    HDEBUG(aObject);
+    HASSERT(iPrivate->iTarget == aObject);
+    if (iPrivate->iTarget == aObject) {
+        iPrivate->iTarget = NULL;
+    }
 }

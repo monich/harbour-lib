@@ -74,6 +74,7 @@ Q_SIGNALS:
 private Q_SLOTS:
     void onAboutToQuit();
     void onRunFinished();
+    void onTargetDestroyed(QObject* aObject);
 
 private:
     class Private;
