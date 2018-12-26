@@ -37,6 +37,9 @@
 #include <QObject>
 #include <QColor>
 
+class QQmlEngine;
+class QJSEngine;
+
 class HarbourTheme : public QObject
 {
     Q_OBJECT
@@ -57,6 +60,9 @@ public:
     explicit HarbourTheme(QObject* aParent = NULL);
 
     ~HarbourTheme();
+
+    // Callback for qmlRegisterSingletonType<HarbourTheme>
+    static QObject* createSingleton(QQmlEngine* aEngine, QJSEngine* aScript);
 
     QColor primaryColor() const;
     ColorScheme colorScheme() const;

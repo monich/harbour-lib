@@ -33,6 +33,8 @@
 #include "HarbourTheme.h"
 #include "HarbourDebug.h"
 
+#include <QQmlEngine>
+
 #include <dlfcn.h>
 
 #define SILICA_SO "/usr/lib/libsailfishsilica.so.1"
@@ -143,6 +145,12 @@ HarbourTheme::HarbourTheme(QObject* aParent) : QObject(aParent)
 
 HarbourTheme::~HarbourTheme()
 {
+}
+
+// Callback for qmlRegisterSingletonType<HarbourTheme>
+QObject* HarbourTheme::createSingleton(QQmlEngine* aEngine, QJSEngine* aScript)
+{
+    return new HarbourTheme(aEngine);
 }
 
 QColor HarbourTheme::primaryColor() const
