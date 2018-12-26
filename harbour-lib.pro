@@ -55,6 +55,7 @@ PUBLIC_HEADERS += \
     include/HarbourImageProvider.h \
     include/HarbourPluginLoader.h \
     include/HarbourTheme.h
+OTHER_FILES += qml/*.qml
 }
 
 HEADERS += \
@@ -63,6 +64,7 @@ HEADERS += \
 
 OTHER_FILES += \
   LICENSE \
+  README \
   rpm/harbour-lib-devel.spec
 
 headers.path = $$INSTALL_ROOT$$PREFIX/include/$$TARGET
