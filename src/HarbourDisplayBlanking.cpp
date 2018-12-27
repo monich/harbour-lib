@@ -8,15 +8,15 @@
  * modification, are permitted provided that the following conditions
  * are met:
  *
- *   - Redistributions of source code must retain the above copyright
- *     notice, this list of conditions and the following disclaimer.
- *   - Redistributions in binary form must reproduce the above copyright
- *     notice, this list of conditions and the following disclaimer in
- *     the documentation and/or other materials provided with the
- *     distribution.
- *   - Neither the name of Jolla Ltd nor the names of its contributors
- *     may be used to endorse or promote products derived from this
- *     software without specific prior written permission.
+ *   1. Redistributions of source code must retain the above copyright
+ *      notice, this list of conditions and the following disclaimer.
+ *   2. Redistributions in binary form must reproduce the above copyright
+ *      notice, this list of conditions and the following disclaimer
+ *      in the documentation and/or other materials provided with the
+ *      distribution.
+ *   3. Neither the names of the copyright holders nor the names of its
+ *      contributors may be used to endorse or promote products derived
+ *      from this software without specific prior written permission.
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
@@ -35,6 +35,8 @@
 #include "HarbourDebug.h"
 #include "HarbourMce.h"
 
+#include <QQmlEngine>
+
 #include <QDBusMessage>
 #include <QDBusConnection>
 #include <QDBusPendingCallWatcher>
@@ -45,11 +47,12 @@
 // ==========================================================================
 // HarbourDisplayBlanking::Private
 // ==========================================================================
+
 class HarbourDisplayBlanking::Private : public HarbourMce {
     Q_OBJECT
 
 public:
-    static const int REPEAT_INERVAL_SEC = 50;
+    static const int REPEAT_INTERVAL_SEC = 50;
     static const QString BLANK_ACTIVE;
     static const QString BLANK_INACTIVE;
     static QWeakPointer<HarbourDisplayBlanking> sSharedInstance;
@@ -197,7 +200,7 @@ HarbourDisplayBlanking::Private::checkPause()
         if (iPauseActive) {
             if (!iRepeatTimer) {
                 iRepeatTimer = new QTimer(this);
-                iRepeatTimer->setInterval(REPEAT_INERVAL_SEC * 1000);
+                iRepeatTimer->setInterval(REPEAT_INTERVAL_SEC * 1000);
                 iRepeatTimer->setSingleShot(false);
                 connect(iRepeatTimer, SIGNAL(timeout()),
                     SLOT(onRepeatBlankingRequest()));
@@ -245,6 +248,15 @@ HarbourDisplayBlanking::HarbourDisplayBlanking(
 HarbourDisplayBlanking::~HarbourDisplayBlanking()
 {
     HDEBUG("destroyed");
+}
+
+// Callback for qmlRegisterSingletonType<HarbourDisplayBlanking>
+QObject*
+HarbourDisplayBlanking::createSingleton(
+    QQmlEngine* aEngine,
+    QJSEngine* aScript)
+{
+    return new HarbourDisplayBlanking(aEngine);
 }
 
 QSharedPointer<HarbourDisplayBlanking>
