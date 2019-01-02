@@ -8,8 +8,9 @@ Item {
 
     property bool swipeRight
     property bool hintEnabled
-    property alias hintRunning: touchInteractionHint.running
     property alias text: label.text
+    property alias hintDelay: hintDelayTimer.interval
+    readonly property bool hintRunning: hintDelayTimer.running || touchInteractionHint.running
 
     signal hintShown()
 
@@ -17,8 +18,15 @@ Item {
         touchInteractionHint.start()
     }
 
-    onHintEnabledChanged: if (hint.hintEnabled) showHint();
-    Component.onCompleted: if (hint.hintEnabled) showHint();
+    onHintEnabledChanged: {
+        if (hint.hintEnabled) {
+            hintDelayTimer.restart()
+        } else {
+            hintDelayTimer.stop()
+        }
+    }
+
+    Component.onCompleted: if (hint.hintEnabled) hintDelayTimer.start()
 
     InteractionHintLabel {
         id: label
@@ -34,5 +42,12 @@ Item {
         direction: swipeRight ? TouchInteraction.Right : TouchInteraction.Left
         anchors.verticalCenter: parent.verticalCenter
         onRunningChanged: if (!running) hint.hintShown()
+    }
+
+    Timer {
+        id: hintDelayTimer
+
+        interval: 1000
+        onTriggered: showHint()
     }
 }
