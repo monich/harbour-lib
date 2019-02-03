@@ -24,6 +24,7 @@ SOURCES += \
     src/HarbourLib.cpp \
     src/HarbourMce.cpp \
     src/HarbourSigChildHandler.cpp \
+    src/HarbourSingleImageProvider.cpp \
     src/HarbourSystemState.cpp \
     src/HarbourTask.cpp \
     src/HarbourTemporaryFile.cpp \
@@ -44,6 +45,7 @@ PUBLIC_HEADERS += \
     include/HarbourJson.h \
     include/HarbourLib.h \
     include/HarbourSigChildHandler.h \
+    include/HarbourSingleImageProvider.h \
     include/HarbourSystemState.h \
     include/HarbourTask.h \
     include/HarbourTemporaryFile.h \
