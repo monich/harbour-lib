@@ -1,6 +1,6 @@
 /*
- * Copyright (C) 2018 Jolla Ltd.
- * Copyright (C) 2018 Slava Monich <slava.monich@jolla.com>
+ * Copyright (C) 2018-2019 Jolla Ltd.
+ * Copyright (C) 2018-2019 Slava Monich <slava.monich@jolla.com>
  *
  * You may use this file under the terms of the BSD license as follows:
  *
@@ -145,7 +145,9 @@ void HarbourTask::run()
 {
     HASSERT(!iPrivate->iStarted);
     iPrivate->iStarted = true;
-    performTask();
+    if (!isCanceled()) {
+        performTask();
+    }
     Q_EMIT runFinished();
 }
 
