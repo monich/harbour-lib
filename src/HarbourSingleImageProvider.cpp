@@ -208,4 +208,14 @@ QString HarbourSingleImageProvider::source() const
     return iPrivate->iSourceUri;
 }
 
+void HarbourSingleImageProvider::clear()
+{
+    if (!iPrivate->iImage.isNull()) {
+        HDEBUG("clearing image");
+        iPrivate->setImage(QImage());
+        Q_EMIT sourceChanged();
+        Q_EMIT imageChanged();
+    }
+}
+
 #include "HarbourSingleImageProvider.moc"

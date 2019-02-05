@@ -52,6 +52,8 @@ public:
 
     QString source() const;
 
+    Q_INVOKABLE void clear();
+
     // QQmlParserStatus
     void classBegin() Q_DECL_OVERRIDE;
     void componentComplete() Q_DECL_OVERRIDE;
