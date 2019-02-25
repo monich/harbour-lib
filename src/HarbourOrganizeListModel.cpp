@@ -49,11 +49,15 @@ public:
 public:
     int iDragIndex;
     int iDragPos;
+    const char* iRowsAboutToBeMovedSlot;
+    const char* iRowsMovedSlot;
 };
 
 HarbourOrganizeListModel::Private::Private() :
     iDragIndex(-1),
-    iDragPos(-1)
+    iDragPos(-1),
+    iRowsAboutToBeMovedSlot(SLOT(_q_sourceRowsAboutToBeMoved(QModelIndex,int,int,QModelIndex,int))),
+    iRowsMovedSlot(SLOT(_q_sourceRowsMoved(QModelIndex,int,int,QModelIndex,int)))
 {
 }
 
@@ -159,7 +163,48 @@ void HarbourOrganizeListModel::setDragIndex(int aIndex)
                 iPrivate->iDragPos = iPrivate->iDragIndex = -1;
                 QAbstractItemModel* source = sourceModel();
                 if (source) {
+                    //
+                    // Now, this is getting a bit hackish.
+                    //
+                    // We don't need QSortFilterProxyModel to react to
+                    // rowsAboutToBeMoved and rowsMoved signals emitted
+                    // by the source model when we invoke moveRow() because
+                    // that would result in layoutChanged signal which
+                    // would reset the view (its current position etc).
+                    // That's totally unnecessary because all the rows
+                    // are already in the right place as long as the view
+                    // is concerned.
+                    //
+                    // It looks a bit fragile since these slots are
+                    // internal and can change at any point of time.
+                    // Well, in the worst case we would get the view
+                    // reset.
+                    //
+                    QObject::disconnect(source,
+                        SIGNAL(rowsAboutToBeMoved(QModelIndex,int,int,QModelIndex,int)),
+                        this, iPrivate->iRowsAboutToBeMovedSlot);
+                    QObject::disconnect(source,
+                        SIGNAL(rowsMoved(QModelIndex,int,int,QModelIndex,int)),
+                        this, iPrivate->iRowsMovedSlot);
+
+                    // Actually move the row
                     source->moveRow(QModelIndex(), dragIndex, QModelIndex(), dragPos);
+
+                    // And (hopefully) reconnect the handlers.
+                    QObject::connect(source,
+                        SIGNAL(rowsAboutToBeMoved(QModelIndex,int,int,QModelIndex,int)),
+                        this, iPrivate->iRowsAboutToBeMovedSlot);
+                    QObject::connect(source,
+                        SIGNAL(rowsMoved(QModelIndex,int,int,QModelIndex,int)),
+                        this, iPrivate->iRowsMovedSlot);
+
+                    // Now the base class doesn't know that rows have
+                    // moved, tell it to update the data by explicitely
+                    // emitting dataChanged signal.
+                    const int top = qMin(dragIndex, dragPos);
+                    const int bottom = qMax(dragIndex, dragPos);
+                    source->dataChanged(source->index(top, 0),
+                        source->index(bottom, 0));
                 }
             } else {
                 iPrivate->iDragPos = iPrivate->iDragIndex = -1;
