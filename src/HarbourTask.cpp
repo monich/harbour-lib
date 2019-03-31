@@ -84,7 +84,7 @@ HarbourTask::HarbourTask(QThreadPool* aPool, QThread* aTargetThread) :
 HarbourTask::~HarbourTask()
 {
     HASSERT(iPrivate->iReleased);
-    if (iPrivate->iSubmitted) wait();
+    HASSERT(!iPrivate->iSubmitted || iPrivate->iDone);
     delete iPrivate;
 }
 
