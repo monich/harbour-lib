@@ -10,7 +10,7 @@ Item {
     property bool hintEnabled
     property alias text: label.text
     property alias hintDelay: hintDelayTimer.interval
-    readonly property bool hintRunning: hintDelayTimer.running || touchInteractionHint.running
+    readonly property bool hintRunning: hintDelayTimer.running || touchInteractionHint.running || label.opacity > 0
 
     signal hintShown()
 
