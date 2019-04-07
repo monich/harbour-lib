@@ -39,8 +39,9 @@ MouseArea {
     property bool down: pressed && containsMouse
     property bool highlighted: down
     property alias iconSource: image.imageSource
-    property bool _showPress: highlighted || pressTimer.running
     property alias text: label.text
+
+    readonly property bool _showPress: highlighted || pressTimer.running
 
     onPressedChanged: {
         if (pressed) {
@@ -71,7 +72,7 @@ MouseArea {
             }
         }
         sourceSize: Qt.size(Theme.itemSizeSmall, Theme.itemSizeSmall)
-        source: highlighted ? highlightSource : imageSource
+        source: _showPress ? highlightSource : imageSource
         opacity: parent.enabled ? 1.0 : 0.4
         anchors {
             top: parent.top
