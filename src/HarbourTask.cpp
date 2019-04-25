@@ -48,9 +48,10 @@ public:
 public:
     QThreadPool* iPool;
     QObject* iTarget;
-    bool iAboutToQuit;
+    bool iStarted;      // These two flags are set by the worker thread
+    bool iFinished;
+    bool iAboutToQuit;  // All other flags are set by the main thread
     bool iSubmitted;
-    bool iStarted;
     bool iReleased;
     bool iDone;
 };
@@ -58,9 +59,10 @@ public:
 HarbourTask::Private::Private(QThreadPool* aPool) :
     iPool(aPool),
     iTarget(NULL),
+    iStarted(false),
+    iFinished(false),
     iAboutToQuit(false),
     iSubmitted(false),
-    iStarted(false),
     iReleased(false),
     iDone(false)
 {
@@ -84,7 +86,7 @@ HarbourTask::HarbourTask(QThreadPool* aPool, QThread* aTargetThread) :
 HarbourTask::~HarbourTask()
 {
     HASSERT(iPrivate->iReleased);
-    HASSERT(!iPrivate->iSubmitted || iPrivate->iDone);
+    HASSERT(!iPrivate->iSubmitted || iPrivate->iFinished);
     delete iPrivate;
 }
 
@@ -148,6 +150,7 @@ void HarbourTask::run()
     if (!isCanceled()) {
         performTask();
     }
+    iPrivate->iFinished = true;
     Q_EMIT runFinished();
 }
 
