@@ -37,13 +37,58 @@
 #include "HarbourDebug.h"
 
 #include <QVector>
+#include <QColor>
 #include <QRgb>
 
 QImage HarbourQrCodeImageProvider::requestImage(const QString& aId, QSize* aSize, const QSize&)
 {
-    const QByteArray bits(HarbourBase32::fromBase32(aId.toLocal8Bit()));
+    // Default background and foreground
+    QColor background(Qt::transparent), color(Qt::black);
+
+    // Parse parameters
+    QString base32;
+    const int sep = aId.indexOf('?');
+    if (sep < 0) {
+        base32 = aId;
+    } else {
+        base32 = aId.left(sep);
+        const QStringList params(aId.mid(sep + 1).split('&', QString::SkipEmptyParts));
+        const int n = params.count();
+        for (int i = 0; i < n; i++) {
+            const QString param(params.at(i));
+            const int eq = param.indexOf('=');
+            if (eq > 0) {
+                static const QString BACKGROUND("background");
+                static const QString COLOR("color");
+                const QString name(param.left(eq).trimmed());
+                const QString value(param.mid(eq + 1).trimmed());
+                if (name == COLOR) {
+                    const QColor colorValue(value);
+                    if (colorValue.isValid()) {
+                        color = colorValue;
+                    } else {
+                        HDEBUG("Invalid" << qPrintable(name) << value);
+                    }
+                } else if (name == BACKGROUND) {
+                    const QColor colorValue(value);
+                    if (colorValue.isValid()) {
+                        background = colorValue;
+                    } else {
+                        HDEBUG("Invalid" << qPrintable(name) << value);
+                    }
+                } else {
+                    HDEBUG("Invalid parameter name" << name);
+                }
+            } else {
+                HDEBUG("Invalid parameter" << param);
+            }
+        }
+    }
+
+    // Decode BASE32
+    const QByteArray bits(HarbourBase32::fromBase32(base32.toLocal8Bit()));
     QImage img;
-    HDEBUG(aId << "=>" << bits.size() << "bytes");
+    HDEBUG(base32 << "=>" << bits.size() << "bytes");
     if (bits.size() > 0) {
         // Bits are packed, rows are rounded at byte boundary
         int rows, rowSize;
@@ -51,10 +96,9 @@ QImage HarbourQrCodeImageProvider::requestImage(const QString& aId, QSize* aSize
         if ((rows * rowSize) == bits.size()) {
             HDEBUG(rows << "x" << rows);
             img = QImage(rows, rows, QImage::Format_Mono);
-            // Black on white
             QVector<QRgb> colors;
-            colors.append(qRgb(0xff,0xff,0xff));
-            colors.append(qRgb(0,0,0));
+            colors.append(background.rgba());
+            colors.append(color.rgba());
             img.setColorTable(colors);
             for (int y = 0; y < rows; y++) {
                 memcpy(img.scanLine(y), bits.constData() + y * rowSize, rowSize);
