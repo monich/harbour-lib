@@ -153,6 +153,12 @@ HarbourQrCodeGenerator::HarbourQrCodeGenerator(QObject* aParent) :
 {
 }
 
+// Callback for qmlRegisterSingletonType<HarbourTheme>
+QObject* HarbourQrCodeGenerator::createSingleton(QQmlEngine* aEngine, QJSEngine*)
+{
+    return new HarbourQrCodeGenerator(aEngine);
+}
+
 QString HarbourQrCodeGenerator::text() const
 {
     return iPrivate->iText;

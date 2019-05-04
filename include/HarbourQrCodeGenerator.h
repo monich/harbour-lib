@@ -53,6 +53,9 @@ public:
 
     Q_INVOKABLE static QByteArray generate(QString aText);
 
+    // Callback for qmlRegisterSingletonType<HarbourQrCodeGenerator>
+    static QObject* createSingleton(QQmlEngine* aEngine, QJSEngine* aScript);
+
 Q_SIGNALS:
     void textChanged();
     void qrcodeChanged();
