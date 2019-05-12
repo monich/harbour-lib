@@ -41,6 +41,12 @@ class HarbourQrCodeImageProvider : public QQuickImageProvider {
 public:
     HarbourQrCodeImageProvider() : QQuickImageProvider(Image) {}
 
+    static const QColor DEFAULT_COLOR;      // Qt::black
+    static const QColor DEFAULT_BACKGROUND; // Qt::transparent
+
+    static QImage createImage(QByteArray aBits, QColor aColor = DEFAULT_COLOR,
+        QColor aBackground = DEFAULT_BACKGROUND);
+
     QImage requestImage(const QString& aId, QSize* aSize,
         const QSize& aRequested) Q_DECL_OVERRIDE;
 };

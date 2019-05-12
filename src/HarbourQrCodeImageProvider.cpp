@@ -40,10 +40,37 @@
 #include <QColor>
 #include <QRgb>
 
+const QColor HarbourQrCodeImageProvider::DEFAULT_COLOR(Qt::black);
+const QColor HarbourQrCodeImageProvider::DEFAULT_BACKGROUND(Qt::transparent);
+
+QImage HarbourQrCodeImageProvider::createImage(QByteArray aBits, QColor aColor, QColor aBackground)
+{
+    if (aBits.size() > 0) {
+        // Bits are packed, rows are rounded at byte boundary
+        int rows, rowSize;
+        for (rows = 2; ((rowSize = (rows + 7)/8) * rows) < aBits.size(); rows++);
+        if ((rows * rowSize) == aBits.size()) {
+            HDEBUG(rows << "x" << rows);
+            QImage img(rows, rows, QImage::Format_Mono);
+            QVector<QRgb> colors;
+            QColor background(aBackground.isValid() ? aBackground : DEFAULT_BACKGROUND);
+            QColor color(aColor.isValid() ? aColor : DEFAULT_COLOR);
+            colors.append(background.rgba());
+            colors.append(color.rgba());
+            img.setColorTable(colors);
+            for (int y = 0; y < rows; y++) {
+                memcpy(img.scanLine(y), aBits.constData() + y * rowSize, rowSize);
+            }
+            return img;
+        }
+    }
+    return QImage();
+}
+
 QImage HarbourQrCodeImageProvider::requestImage(const QString& aId, QSize* aSize, const QSize&)
 {
     // Default background and foreground
-    QColor background(Qt::transparent), color(Qt::black);
+    QColor background(DEFAULT_BACKGROUND), color(DEFAULT_COLOR);
 
     // Parse parameters
     QString base32;
@@ -87,25 +114,10 @@ QImage HarbourQrCodeImageProvider::requestImage(const QString& aId, QSize* aSize
 
     // Decode BASE32
     const QByteArray bits(HarbourBase32::fromBase32(base32.toLocal8Bit()));
-    QImage img;
     HDEBUG(base32 << "=>" << bits.size() << "bytes");
-    if (bits.size() > 0) {
-        // Bits are packed, rows are rounded at byte boundary
-        int rows, rowSize;
-        for (rows = 2; ((rowSize = (rows + 7)/8) * rows) < bits.size(); rows++);
-        if ((rows * rowSize) == bits.size()) {
-            HDEBUG(rows << "x" << rows);
-            img = QImage(rows, rows, QImage::Format_Mono);
-            QVector<QRgb> colors;
-            colors.append(background.rgba());
-            colors.append(color.rgba());
-            img.setColorTable(colors);
-            for (int y = 0; y < rows; y++) {
-                memcpy(img.scanLine(y), bits.constData() + y * rowSize, rowSize);
-            }
-        }
-    }
 
+    // Convert to image
+    QImage img(createImage(bits, color, background));
     if (!img.isNull() && aSize) {
         *aSize = img.size();
     }
