@@ -52,7 +52,7 @@ public:
     void performTask() Q_DECL_OVERRIDE;
 public:
     QString iText;
-    QString iQrCode;
+    QString iCode;
 };
 
 HarbourQrCodeGenerator::Task::Task(QThreadPool* aPool, QString aText) :
@@ -65,7 +65,7 @@ void HarbourQrCodeGenerator::Task::performTask()
 {
     QByteArray bytes(generate(iText));
     if (!bytes.isEmpty()) {
-        iQrCode = HarbourBase32::toBase32(bytes);
+        iCode = HarbourBase32::toBase32(bytes);
     }
 }
 
@@ -90,7 +90,7 @@ public:
     QThreadPool* iThreadPool;
     Task* iTask;
     QString iText;
-    QString iQrCode;
+    QString iCode;
 };
 
 HarbourQrCodeGenerator::Private::Private(HarbourQrCodeGenerator* aParent) :
@@ -132,12 +132,12 @@ void HarbourQrCodeGenerator::Private::onTaskDone()
 {
     if (sender() == iTask) {
         HarbourQrCodeGenerator* obj = parentObject();
-        const bool qrCodeChanged = (iQrCode != iTask->iQrCode);
-        iQrCode = iTask->iQrCode;
+        const bool qrCodeChanged = (iCode != iTask->iCode);
+        iCode = iTask->iCode;
         iTask->release();
         iTask = NULL;
         if (qrCodeChanged) {
-            Q_EMIT obj->qrcodeChanged();
+            Q_EMIT obj->codeChanged();
         }
         Q_EMIT obj->runningChanged();
     }
@@ -153,7 +153,7 @@ HarbourQrCodeGenerator::HarbourQrCodeGenerator(QObject* aParent) :
 {
 }
 
-// Callback for qmlRegisterSingletonType<HarbourTheme>
+// Callback for qmlRegisterSingletonType<HarbourQrCodeGenerator>
 QObject* HarbourQrCodeGenerator::createSingleton(QQmlEngine* aEngine, QJSEngine*)
 {
     return new HarbourQrCodeGenerator(aEngine);
@@ -169,9 +169,9 @@ void HarbourQrCodeGenerator::setText(QString aValue)
     iPrivate->setText(aValue);
 }
 
-QString HarbourQrCodeGenerator::qrcode() const
+QString HarbourQrCodeGenerator::code() const
 {
-    return iPrivate->iQrCode;
+    return iPrivate->iCode;
 }
 
 bool HarbourQrCodeGenerator::running() const

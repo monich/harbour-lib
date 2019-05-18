@@ -39,7 +39,8 @@
 class HarbourQrCodeGenerator : public QObject {
     Q_OBJECT
     Q_PROPERTY(QString text READ text WRITE setText NOTIFY textChanged)
-    Q_PROPERTY(QString qrcode READ qrcode NOTIFY qrcodeChanged)
+    Q_PROPERTY(QString code READ code NOTIFY codeChanged)
+    Q_PROPERTY(QString qrcode READ code NOTIFY codeChanged)
     Q_PROPERTY(bool running READ running NOTIFY runningChanged)
 
 public:
@@ -48,7 +49,7 @@ public:
     QString text() const;
     void setText(QString aValue);
 
-    QString qrcode() const;
+    QString code() const;
     bool running() const;
 
     Q_INVOKABLE static QByteArray generate(QString aText);
@@ -58,7 +59,7 @@ public:
 
 Q_SIGNALS:
     void textChanged();
-    void qrcodeChanged();
+    void codeChanged();
     void runningChanged();
 
 private:
