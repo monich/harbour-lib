@@ -75,7 +75,7 @@ HarbourTransferMethodsModel::HarbourTransferMethodsModel(QObject* aParent):
     QAbstractListModel(aParent),
     iAccountIconSupported(false),
     iRequestUpdate(&HarbourTransferMethodsModel::checkTransferMethods),
-    iUpdateWatcher(NULL)
+    iUpdateWatcher(Q_NULLPTR)
 {
     iTransferEngine = new TransferEngine(this);
     connect(iTransferEngine,
@@ -91,9 +91,9 @@ HarbourTransferMethodsModel::~HarbourTransferMethodsModel()
 
 // Callback for qmlRegisterSingletonType<HarbourTransferMethodsModel>
 QObject*
-HarbourTransferMethodsModel::createSingleton(QQmlEngine* aEngine, QJSEngine* aScript)
+HarbourTransferMethodsModel::createSingleton(QQmlEngine*, QJSEngine*)
 {
-    return new HarbourTransferMethodsModel(aEngine);
+    return new HarbourTransferMethodsModel();
 }
 
 bool HarbourTransferMethodsModel::loadTranslations(QTranslator* aTranslator, QLocale aLocale)
@@ -113,7 +113,7 @@ void HarbourTransferMethodsModel::requestUpdate()
         HDEBUG("dropping pending call");
         iUpdateWatcher->disconnect(this);
         delete iUpdateWatcher;
-        iUpdateWatcher = NULL;
+        iUpdateWatcher = Q_NULLPTR;
     }
     iUpdateWatcher = (this->*iRequestUpdate)();
 }
@@ -165,7 +165,7 @@ void HarbourTransferMethodsModel::onTransferMethodsCheckFinished(QDBusPendingCal
     QDBusPendingReply<HarbourTransferMethodInfo2List> reply(*aWatch);
     aWatch->deleteLater();
     HASSERT(aWatch == iUpdateWatcher);
-    iUpdateWatcher = NULL;
+    iUpdateWatcher = Q_NULLPTR;
     if (reply.isError()) {
         QDBusError error(reply.error());
         qWarning() << error;
@@ -184,7 +184,7 @@ void HarbourTransferMethodsModel::onTransferMethods2Finished(QDBusPendingCallWat
     QDBusPendingReply<HarbourTransferMethodInfo2List> reply(*aWatch);
     aWatch->deleteLater();
     HASSERT(aWatch == iUpdateWatcher);
-    iUpdateWatcher = NULL;
+    iUpdateWatcher = Q_NULLPTR;
     if (reply.isError()) {
         qWarning() << reply.error();
     } else {
@@ -197,7 +197,7 @@ void HarbourTransferMethodsModel::onTransferMethodsFinished(QDBusPendingCallWatc
     QDBusPendingReply<HarbourTransferMethodInfoList> reply(*aWatch);
     aWatch->deleteLater();
     HASSERT(aWatch == iUpdateWatcher);
-    iUpdateWatcher = NULL;
+    iUpdateWatcher = Q_NULLPTR;
     if (reply.isError()) {
         qWarning() << reply.error();
     } else {
@@ -239,7 +239,7 @@ QVariant HarbourTransferMethodsModel::data(const QModelIndex &index, int role) c
         const HarbourTransferMethodInfo2& info = iMethodList.at(iFilteredList.at(row));
         switch (role) {
         case DisplayNameRole: {
-            QString s(qApp->translate(NULL, qPrintable(info.displayName)));
+            QString s(qApp->translate(Q_NULLPTR, qPrintable(info.displayName)));
             if (!s.isEmpty()) return s;
             /* Otherwise default to methodId */
             HDEBUG("no translation for" << info.displayName);

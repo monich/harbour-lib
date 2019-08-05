@@ -1,6 +1,6 @@
 /*
- * Copyright (C) 2015-2018 Jolla Ltd.
- * Copyright (C) 2015-2018 Slava Monich <slava.monich@jolla.com>
+ * Copyright (C) 2015-2019 Jolla Ltd.
+ * Copyright (C) 2015-2019 Slava Monich <slava.monich@jolla.com>
  *
  * You may use this file under the terms of the BSD license as follows:
  *
@@ -94,7 +94,7 @@ HarbourDisplayBlanking::Private::Private(
     iPauseAllowed(false),
     iPauseRequested(false),
     iPauseActive(false),
-    iRepeatTimer(NULL)
+    iRepeatTimer(Q_NULLPTR)
 {
     HDEBUG("created");
     setupProperty("get_display_blanking_pause", "display_blanking_pause_ind",
@@ -253,10 +253,10 @@ HarbourDisplayBlanking::~HarbourDisplayBlanking()
 // Callback for qmlRegisterSingletonType<HarbourDisplayBlanking>
 QObject*
 HarbourDisplayBlanking::createSingleton(
-    QQmlEngine* aEngine,
-    QJSEngine* aScript)
+    QQmlEngine*,
+    QJSEngine*)
 {
-    return new HarbourDisplayBlanking(aEngine);
+    return new HarbourDisplayBlanking();
 }
 
 QSharedPointer<HarbourDisplayBlanking>

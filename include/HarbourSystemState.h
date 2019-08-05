@@ -1,6 +1,6 @@
 /*
- * Copyright (C) 2015-2018 Jolla Ltd.
- * Copyright (C) 2015-2018 Slava Monich <slava.monich@jolla.com>
+ * Copyright (C) 2015-2019 Jolla Ltd.
+ * Copyright (C) 2015-2019 Slava Monich <slava.monich@jolla.com>
  *
  * You may use this file under the terms of the BSD license as follows:
  *
@@ -63,7 +63,7 @@ public:
     static const QString MCE_TK_UNLOCKED;
 
 public:
-    explicit HarbourSystemState(QObject* aParent = NULL);
+    explicit HarbourSystemState(QObject* aParent = Q_NULLPTR);
     ~HarbourSystemState();
 
     // Callback for qmlRegisterSingletonType<HarbourSystemState>

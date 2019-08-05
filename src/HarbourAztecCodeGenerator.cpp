@@ -154,9 +154,9 @@ HarbourAztecCodeGenerator::HarbourAztecCodeGenerator(QObject* aParent) :
 }
 
 // Callback for qmlRegisterSingletonType<HarbourAztecCodeGenerator>
-QObject* HarbourAztecCodeGenerator::createSingleton(QQmlEngine* aEngine, QJSEngine*)
+QObject* HarbourAztecCodeGenerator::createSingleton(QQmlEngine*, QJSEngine*)
 {
-    return new HarbourAztecCodeGenerator(aEngine);
+    return new HarbourAztecCodeGenerator();
 }
 
 QString HarbourAztecCodeGenerator::text() const

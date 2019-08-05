@@ -1,6 +1,6 @@
 /*
- * Copyright (C) 2015-2018 Jolla Ltd.
- * Copyright (C) 2015-2018 Slava Monich <slava.monich@jolla.com>
+ * Copyright (C) 2015-2019 Jolla Ltd.
+ * Copyright (C) 2015-2019 Slava Monich <slava.monich@jolla.com>
  *
  * You may use this file under the terms of the BSD license as follows:
  *
@@ -48,7 +48,7 @@ class HarbourDisplayBlanking: public QObject {
     Q_PROPERTY(bool pauseRequested READ pauseRequested WRITE setPauseRequested NOTIFY pauseRequestedChanged)
 
 public:
-    explicit HarbourDisplayBlanking(QObject* aParent = NULL);
+    explicit HarbourDisplayBlanking(QObject* aParent = Q_NULLPTR);
     ~HarbourDisplayBlanking();
 
     // Callback for qmlRegisterSingletonType<HarbourDisplayBlanking>
