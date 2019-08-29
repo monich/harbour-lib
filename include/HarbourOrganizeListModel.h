@@ -39,7 +39,7 @@
 
 // This model helps to implement rearranging list items by dragging.
 // When drag starts, QML sets dragIndex property and then updates
-// dragPos when with the popsition of the dragged list item. When
+// dragPos when with the position of the dragged list item. When
 // drag is finished, QML sets dragIndex to -1 and the model calls
 // moveRow() on the underlying (source) model, to finish the move.
 
@@ -50,7 +50,7 @@ class HarbourOrganizeListModel : public QSortFilterProxyModel {
     Q_PROPERTY(int dragPos READ dragPos WRITE setDragPos NOTIFY dragPosChanged)
 
 public:
-    HarbourOrganizeListModel(QObject* aParent = NULL);
+    HarbourOrganizeListModel(QObject* aParent = Q_NULLPTR);
     ~HarbourOrganizeListModel();
 
     void setSourceModelObject(QObject* aModel);
