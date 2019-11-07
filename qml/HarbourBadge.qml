@@ -37,11 +37,11 @@ import Sailfish.Silica 1.0
 Item {
     id: badge
 
-    property real maxWidth
+    property real maxWidth: parent.width
     property alias text: label.text
     readonly property real radius: height/2
 
-    width: maxWidth > 0 ? Math.max(label.paintedWidth + radius, height) : height
+    width: Math.max(label.implicitWidth + radius, height)
     height: Theme.itemSizeSmall/2
     visible: opacity > 0
     opacity: text.length ? 1 : 0
@@ -60,8 +60,8 @@ Item {
         id: label
 
         font.bold: true
-        width: Math.max((maxWidth > 0 ? maxWidth : parent.width) - radius, height)
-        height: Math.floor(parent.height - radius/2)
+        maxWidth: Math.max(badge.maxWidth - radius, 2 * radius)
+        maxHeight: Math.floor(parent.height - radius/2)
         anchors.centerIn: background
     }
 }

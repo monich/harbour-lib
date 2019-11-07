@@ -37,6 +37,8 @@ import Sailfish.Silica 1.0
 Label {
     property int minFontSize: Theme.fontSizeTiny
     property int maxFontSize: Theme.fontSizeMedium
+    property real maxWidth: width
+    property real maxHeight: height
     property int refitting
 
     smooth: true
@@ -50,27 +52,26 @@ Label {
 
     Component.onCompleted: refitText()
 
-    onWidthChanged: refitText()
-    onHeightChanged: refitText()
+    onMaxWidthChanged: refitText()
+    onMaxHeightChanged: refitText()
     onTextChanged: refitText()
     onMaxFontSizeChanged: refitText()
     onMinFontSizeChanged: refitText()
 
     function refitText() {
         refitting++
-        if (refitting == 1 && paintedHeight > 0 && paintedWidth > 0) {
+        if (refitting == 1 && implicitHeight > 0 && implicitWidth > 0) {
             if (font.pixelSize % 2) font.pixelSize++
-            while (paintedWidth > width || paintedHeight > height) {
+            while (implicitWidth > maxWidth || implicitHeight > maxHeight) {
                 if ((font.pixelSize -= 2) <= minFontSize)
                     break
             }
-            while (paintedWidth < width && paintedHeight < height) {
+            while (implicitWidth < maxWidth && implicitHeight < maxHeight) {
                 font.pixelSize += 2
             }
             font.pixelSize -= 2
             if (font.pixelSize >= maxFontSize) {
                 font.pixelSize = maxFontSize
-                return
             }
         }
         refitting--
