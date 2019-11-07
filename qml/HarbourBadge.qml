@@ -1,6 +1,6 @@
 /*
- * Copyright (C) 2018 Jolla Ltd.
- * Copyright (C) 2018 Slava Monich <slava@monich.com>
+ * Copyright (C) 2018-2019 Jolla Ltd.
+ * Copyright (C) 2018-2019 Slava Monich <slava@monich.com>
  *
  * You may use this file under the terms of BSD license as follows:
  *
@@ -31,7 +31,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-import QtQuick 2.2
+import QtQuick 2.0
 import Sailfish.Silica 1.0
 
 Item {
@@ -46,7 +46,7 @@ Item {
     visible: opacity > 0
     opacity: text.length ? 1 : 0
 
-    Behavior on opacity { FadeAnimator {} }
+    Behavior on opacity { FadeAnimation {} }
 
     Rectangle {
         id: background
