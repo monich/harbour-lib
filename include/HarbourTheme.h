@@ -43,11 +43,16 @@ class QJSEngine;
 class HarbourTheme : public QObject
 {
     Q_OBJECT
+    Q_ENUMS(ColorScheme)
     Q_PROPERTY(ColorScheme colorScheme READ colorScheme NOTIFY colorSchemeChanged)
     Q_PROPERTY(QColor primaryColor READ primaryColor NOTIFY primaryColorChanged)
     Q_PROPERTY(bool lightOnDark READ lightOnDark NOTIFY colorSchemeChanged)
     Q_PROPERTY(bool darkOnLight READ darkOnLight NOTIFY colorSchemeChanged)
-    Q_ENUMS(ColorScheme)
+
+    Q_PROPERTY(qreal opacityFaint READ opacityFaint CONSTANT)
+    Q_PROPERTY(qreal opacityLow READ opacityLow CONSTANT)
+    Q_PROPERTY(qreal opacityHigh READ opacityHigh CONSTANT)
+    Q_PROPERTY(qreal opacityOverlay READ opacityOverlay CONSTANT)
 
 public:
     class Private;
@@ -68,6 +73,11 @@ public:
     ColorScheme colorScheme() const;
     bool lightOnDark() const;
     bool darkOnLight() const;
+
+    qreal opacityFaint() const;
+    qreal opacityLow() const;
+    qreal opacityHigh() const;
+    qreal opacityOverlay() const;
 
 Q_SIGNALS:
     void colorSchemeChanged();

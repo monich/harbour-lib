@@ -47,7 +47,15 @@
     f("_ZNK6Silica5Theme11colorSchemeEv", /* Silica::ColorScheme Silica::Theme::colorScheme() const */ \
         HarbourTheme::ColorScheme, colorScheme,(QObject*)) \
     f("_ZNK6Silica5Theme12primaryColorEv", /* QColor Silica::Theme::primaryColor() const */ \
-        QColor, primaryColor,(QObject*))
+        QColor, primaryColor,(QObject*)) \
+    f("_ZNK6Silica5Theme12opacityFaintEv", /* qreal Silica::Theme::opacityFaint() const */ \
+        qreal, opacityFaint,(QObject*)) \
+    f("_ZNK6Silica5Theme10opacityLowEv", /* qreal Silica::Theme::opacityLow() const */ \
+        qreal, opacityLow,(QObject*)) \
+    f("_ZNK6Silica5Theme11opacityHighEv", /* qreal Silica::Theme::opacityHigh() const */ \
+        qreal, opacityHigh,(QObject*)) \
+    f("_ZNK6Silica5Theme14opacityOverlayEv", /* qreal Silica::Theme::opacityOverlay() const */ \
+        qreal, opacityOverlay,(QObject*))
 
 // ==========================================================================
 // HarbourTheme::Private
@@ -66,6 +74,11 @@ public:
     SILICA_FUNCTIONS(SILICA_TYPEDEF)
     } SilicaFunctions;
 
+    static const qreal DEFAULT_OPACITY_LOW;
+    static const qreal DEFAULT_OPACITY_FAINT;
+    static const qreal DEFAULT_OPACITY_HIGH;
+    static const qreal DEFAULT_OPACITY_OVERLAY;
+
     static void* gHandle;
     static SilicaFunctions gSilica;
 
@@ -73,10 +86,19 @@ public:
     static QObject* instance();
     static ColorScheme colorScheme();
     static QColor primaryColor();
+    static qreal opacityFaint();
+    static qreal opacityLow();
+    static qreal opacityHigh();
+    static qreal opacityOverlay();
 };
 
 void* HarbourTheme::Private::gHandle;
 HarbourTheme::Private::SilicaFunctions HarbourTheme::Private::gSilica;
+
+const qreal HarbourTheme::Private::DEFAULT_OPACITY_LOW = 0.2;
+const qreal HarbourTheme::Private::DEFAULT_OPACITY_FAINT = 0.4;
+const qreal HarbourTheme::Private::DEFAULT_OPACITY_HIGH = 0.6;
+const qreal HarbourTheme::Private::DEFAULT_OPACITY_OVERLAY = 0.8;
 
 static const char* SilicaSymbols[] = {
 #define SILICA_SYMBOL(sym,ret,name,args) sym,
@@ -109,6 +131,34 @@ QColor HarbourTheme::Private::primaryColor()
 {
     QObject* silica = instance();
     return (silica && gSilica.primaryColor) ? gSilica.primaryColor(silica) : QColor();
+}
+
+qreal HarbourTheme::Private::opacityFaint()
+{
+    QObject* silica = instance();
+    return (silica && gSilica.opacityFaint) ? gSilica.opacityFaint(silica) :
+        DEFAULT_OPACITY_LOW;
+}
+
+qreal HarbourTheme::Private::opacityLow()
+{
+    QObject* silica = instance();
+    return (silica && gSilica.opacityLow) ? gSilica.opacityLow(silica) :
+        DEFAULT_OPACITY_FAINT;
+}
+
+qreal HarbourTheme::Private::opacityHigh()
+{
+    QObject* silica = instance();
+    return (silica && gSilica.opacityHigh) ? gSilica.opacityHigh(silica) :
+        DEFAULT_OPACITY_HIGH;
+}
+
+qreal HarbourTheme::Private::opacityOverlay()
+{
+    QObject* silica = instance();
+    return (silica && gSilica.opacityOverlay) ? gSilica.opacityOverlay(silica) :
+        DEFAULT_OPACITY_OVERLAY;
 }
 
 // ==========================================================================
@@ -172,4 +222,24 @@ bool HarbourTheme::lightOnDark() const
 bool HarbourTheme::darkOnLight() const
 {
     return Private::colorScheme() == DarkOnLight;
+}
+
+qreal HarbourTheme::opacityFaint() const
+{
+    return Private::opacityFaint();
+}
+
+qreal HarbourTheme::opacityLow() const
+{
+    return Private::opacityLow();
+}
+
+qreal HarbourTheme::opacityHigh() const
+{
+    return Private::opacityHigh();
+}
+
+qreal HarbourTheme::opacityOverlay() const
+{
+    return Private::opacityOverlay();
 }
