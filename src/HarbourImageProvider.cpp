@@ -90,7 +90,7 @@ HarbourImageProvider::TextureFactory::load() const
                     size.setHeight(qRound(iRequestedSize.width()*
                         (qreal)size.height()/size.width()));
                     size.setWidth(iRequestedSize.width());
-                } else {
+                } else if (iRequestedSize.height() > 0) {
                     size.setWidth(qRound(iRequestedSize.height()*
                         (qreal)size.width()/size.height()));
                     size.setHeight(iRequestedSize.height());
