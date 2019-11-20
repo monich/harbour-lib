@@ -209,6 +209,12 @@ QColor HarbourTheme::primaryColor() const
     return Private::primaryColor();
 }
 
+QColor HarbourTheme::invertedPrimaryColor() const
+{
+    const QRgb rgba = HarbourTheme::primaryColor().rgba();
+    return QColor(((~(rgba & RGB_MASK)) & RGB_MASK) | (rgba & (~RGB_MASK)));
+}
+
 HarbourTheme::ColorScheme HarbourTheme::colorScheme() const
 {
     return Private::colorScheme();

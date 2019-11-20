@@ -45,6 +45,7 @@ class HarbourTheme : public QObject
     Q_OBJECT
     Q_ENUMS(ColorScheme)
     Q_PROPERTY(ColorScheme colorScheme READ colorScheme NOTIFY colorSchemeChanged)
+    Q_PROPERTY(QColor invertedPrimaryColor READ invertedPrimaryColor NOTIFY primaryColorChanged)
     Q_PROPERTY(QColor primaryColor READ primaryColor NOTIFY primaryColorChanged)
     Q_PROPERTY(bool lightOnDark READ lightOnDark NOTIFY colorSchemeChanged)
     Q_PROPERTY(bool darkOnLight READ darkOnLight NOTIFY colorSchemeChanged)
@@ -69,6 +70,7 @@ public:
     // Callback for qmlRegisterSingletonType<HarbourTheme>
     static QObject* createSingleton(QQmlEngine* aEngine, QJSEngine* aScript);
 
+    QColor invertedPrimaryColor() const;
     QColor primaryColor() const;
     ColorScheme colorScheme() const;
     bool lightOnDark() const;
