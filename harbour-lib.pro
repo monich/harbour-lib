@@ -25,6 +25,7 @@ SOURCES += \
     src/HarbourLib.cpp \
     src/HarbourMce.cpp \
     src/HarbourOrganizeListModel.cpp \
+    src/HarbourSelectionListModel.cpp \
     src/HarbourSigChildHandler.cpp \
     src/HarbourSingleImageProvider.cpp \
     src/HarbourSystemState.cpp \
@@ -48,6 +49,7 @@ PUBLIC_HEADERS += \
     include/HarbourJson.h \
     include/HarbourLib.h \
     include/HarbourOrganizeListModel.h \
+    include/HarbourSelectionListModel.h \
     include/HarbourSigChildHandler.h \
     include/HarbourSingleImageProvider.h \
     include/HarbourSystemState.h \
