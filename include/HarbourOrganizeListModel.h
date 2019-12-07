@@ -45,7 +45,7 @@
 
 class HarbourOrganizeListModel : public QSortFilterProxyModel {
     Q_OBJECT
-    Q_PROPERTY(QObject* sourceModel READ sourceModel WRITE setSourceModelObject NOTIFY sourceModelChanged)
+    Q_PROPERTY(QObject* sourceModel READ sourceModel WRITE setSourceModelObject NOTIFY sourceModelObjectChanged)
     Q_PROPERTY(int dragIndex READ dragIndex WRITE setDragIndex NOTIFY dragIndexChanged)
     Q_PROPERTY(int dragPos READ dragPos WRITE setDragPos NOTIFY dragPosChanged)
 
@@ -66,7 +66,7 @@ public:
     QModelIndex mapFromSource(const QModelIndex& aIndex) const Q_DECL_OVERRIDE;
 
 Q_SIGNALS:
-    void sourceModelChanged();
+    void sourceModelObjectChanged();
     void dragIndexChanged();
     void dragPosChanged();
 

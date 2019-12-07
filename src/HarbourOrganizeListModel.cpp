@@ -115,6 +115,7 @@ HarbourOrganizeListModel::HarbourOrganizeListModel(QObject* aParent) :
     SUPER(aParent),
     iPrivate(new Private)
 {
+    connect(this, SIGNAL(sourceModelChanged()), SIGNAL(sourceModelObjectChanged()));
 }
 
 HarbourOrganizeListModel::~HarbourOrganizeListModel()
