@@ -85,7 +85,11 @@ HarbourTask::HarbourTask(QThreadPool* aPool, QThread* aTargetThread) :
 
 HarbourTask::~HarbourTask()
 {
-    HASSERT(iPrivate->iReleased);
+    // Target can be destroyed before done() signal is delivered to the
+    // main thread and the target has a chance to release the task. In
+    // that case onTargetDestroyed must be invoked before the task gets
+    // destroyed (which clears iPrivate->iTarget).
+    HASSERT(iPrivate->iReleased || !iPrivate->iTarget);
     HASSERT(!iPrivate->iSubmitted || iPrivate->iFinished);
     delete iPrivate;
 }
