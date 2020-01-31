@@ -1,6 +1,6 @@
 /*
- * Copyright (C) 2018-2019 Jolla Ltd.
- * Copyright (C) 2018-2019 Slava Monich <slava@monich.com>
+ * Copyright (C) 2018-2020 Jolla Ltd.
+ * Copyright (C) 2018-2020 Slava Monich <slava@monich.com>
  *
  * You may use this file under the terms of BSD license as follows:
  *
@@ -62,16 +62,14 @@ Label {
         refitting++
         if (refitting == 1 && implicitHeight > 0 && implicitWidth > 0) {
             if (font.pixelSize % 2) font.pixelSize++
-            while (implicitWidth > maxWidth || implicitHeight > maxHeight) {
-                if ((font.pixelSize -= 2) <= minFontSize)
-                    break
+            while ((implicitWidth > maxWidth || implicitHeight > maxHeight) && (font.pixelSize - 2) >= minFontSize) {
+                font.pixelSize -= 2
             }
-            while (implicitWidth < maxWidth && implicitHeight < maxHeight) {
+            while (implicitWidth < maxWidth && implicitHeight < maxHeight && (font.pixelSize + 2) <= maxFontSize) {
                 font.pixelSize += 2
             }
-            font.pixelSize -= 2
-            if (font.pixelSize >= maxFontSize) {
-                font.pixelSize = maxFontSize
+            if (implicitWidth > maxWidth || implicitHeight > maxHeight) {
+                font.pixelSize -= 2
             }
         }
         refitting--
