@@ -4,6 +4,10 @@ TARGET = harbour-lib
 QT += dbus
 QT-= gui
 
+# For HarbourSystemTime
+CONFIG += link_pkgconfig
+PKGCONFIG += libglibutil
+
 VERSION = 1.0
 
 greaterThan(QT_MAJOR_VERSION, 4) {
@@ -30,6 +34,7 @@ SOURCES += \
     src/HarbourSigChildHandler.cpp \
     src/HarbourSingleImageProvider.cpp \
     src/HarbourSystemState.cpp \
+    src/HarbourSystemTime.cpp \
     src/HarbourTask.cpp \
     src/HarbourTemporaryFile.cpp \
     src/HarbourTransferMethodInfo.cpp \
@@ -55,6 +60,7 @@ PUBLIC_HEADERS += \
     include/HarbourSigChildHandler.h \
     include/HarbourSingleImageProvider.h \
     include/HarbourSystemState.h \
+    include/HarbourSystemTime.h \
     include/HarbourTask.h \
     include/HarbourTemporaryFile.h \
     include/HarbourTransferMethodInfo.h \
