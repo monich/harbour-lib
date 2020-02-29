@@ -1,6 +1,6 @@
 /*
- * Copyright (C) 2019 Jolla Ltd.
- * Copyright (C) 2019 Slava Monich <slava@monich.com>
+ * Copyright (C) 2019-2020 Jolla Ltd.
+ * Copyright (C) 2019-2020 Slava Monich <slava@monich.com>
  *
  * You may use this file under the terms of BSD license as follows:
  *
@@ -39,12 +39,14 @@ Rotation {
     property string text
     property Item target
     property real duration: 500
+    property bool enabled: true
+    property string property: "text"
 
     property var animation: SequentialAnimation {
         alwaysRunToEnd: true
 
         onRunningChanged: {
-            if (!running && target.text !== rotation.text) {
+            if (!running && target[property] != rotation.text) {
                 start()
             }
         }
@@ -57,7 +59,7 @@ Rotation {
             to: 90
             duration: rotation.duration/2
         }
-        ScriptAction { script: target.text = rotation.text; }
+        ScriptAction { script: target[property] = rotation.text; }
         NumberAnimation {
             easing.type: Easing.InOutSine
             target: rotation
@@ -78,5 +80,20 @@ Rotation {
         z: 0
     }
 
-    onTextChanged: animation.start()
+    function flipTo(value) {
+        if (!!target) {
+            animation.start()
+            text = value
+        }
+    }
+
+    onTextChanged: {
+        if (!!target) {
+            if (enabled) {
+                animation.start()
+            } else if (!animation.running) {
+                target[property] = text
+            }
+        }
+    }
 }
