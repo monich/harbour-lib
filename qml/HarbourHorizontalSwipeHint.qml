@@ -1,6 +1,6 @@
 /*
- * Copyright (C) 2019 Jolla Ltd.
- * Copyright (C) 2019 Slava Monich <slava@monich.com>
+ * Copyright (C) 2019-2020 Jolla Ltd.
+ * Copyright (C) 2019-2020 Slava Monich <slava@monich.com>
  *
  * You may use this file under the terms of BSD license as follows:
  *
@@ -40,15 +40,20 @@ Item {
     anchors.fill: parent
 
     property bool swipeRight
+    property bool bothWays
     property bool hintEnabled
     property alias text: label.text
     property alias hintDelay: hintDelayTimer.interval
+    property alias loops: touchInteractionHint.loops
     readonly property bool hintRunning: hintDelayTimer.running || touchInteractionHint.running || label.opacity > 0
 
     signal hintShown()
 
     function showHint() {
-        touchInteractionHint.start()
+        if (!touchInteractionHint.running) {
+            touchInteractionHint.direction = touchInteractionHint.defaultDirection
+            touchInteractionHint.start()
+        }
     }
 
     onHintEnabledChanged: {
@@ -72,9 +77,19 @@ Item {
     TouchInteractionHint {
         id: touchInteractionHint
 
-        direction: swipeRight ? TouchInteraction.Right : TouchInteraction.Left
+        readonly property int defaultDirection: swipeRight ? TouchInteraction.Right : TouchInteraction.Left
+        readonly property int otherDirection: swipeRight ? TouchInteraction.Left : TouchInteraction.Right
         anchors.verticalCenter: parent.verticalCenter
-        onRunningChanged: if (!running) hint.hintShown()
+        onRunningChanged: {
+            if (!running) {
+                if (bothWays && direction === defaultDirection) {
+                    direction = otherDirection
+                    start()
+                } else {
+                    hint.hintShown()
+                }
+            }
+        }
     }
 
     Timer {
