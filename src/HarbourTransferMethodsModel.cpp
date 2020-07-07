@@ -1,6 +1,6 @@
 /*
- * Copyright (C) 2016-2019 Jolla Ltd.
- * Copyright (C) 2016-2019 Slava Monich <slava.monich@jolla.com>
+ * Copyright (C) 2016-2020 Jolla Ltd.
+ * Copyright (C) 2016-2020 Slava Monich <slava.monich@jolla.com>
  *
  * You may use this file under the terms of the BSD license as follows:
  *
@@ -244,7 +244,7 @@ QVariant HarbourTransferMethodsModel::data(const QModelIndex &index, int role) c
             /* Otherwise default to methodId */
             HDEBUG("no translation for" << info.displayName);
         }
-        /* nobreak */
+        /* fallthrough */
         case MethodIdRole:    return info.methodId;
         case UserNameRole:    return info.userName;
         case ShareUIPathRole: return info.shareUIPath;
