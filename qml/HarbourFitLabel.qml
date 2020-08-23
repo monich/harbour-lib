@@ -11,8 +11,8 @@
  *   1. Redistributions of source code must retain the above copyright
  *      notice, this list of conditions and the following disclaimer.
  *   2. Redistributions in binary form must reproduce the above copyright
- *      notice, this list of conditions and the following disclaimer in
- *      the documentation and/or other materials provided with the
+ *      notice, this list of conditions and the following disclaimer
+ *      in the documentation and/or other materials provided with the
  *      distribution.
  *   3. Neither the names of the copyright holders nor the names of its
  *      contributors may be used to endorse or promote products derived
@@ -39,7 +39,7 @@ Label {
     property int maxFontSize: Theme.fontSizeMedium
     property real maxWidth: width
     property real maxHeight: height
-    property int refitting
+    property bool refitting
 
     smooth: true
     visible: opacity > 0
@@ -50,7 +50,12 @@ Label {
 
     Behavior on opacity { FadeAnimation {} }
 
-    Component.onCompleted: refitText()
+    Component.onCompleted: {
+        refitting = true
+        font.pixelSize = maxFontSize
+        refitTextRun()
+        refitting = false
+    }
 
     onMaxWidthChanged: refitText()
     onMaxHeightChanged: refitText()
@@ -59,10 +64,17 @@ Label {
     onMinFontSizeChanged: refitText()
 
     function refitText() {
-        refitting++
-        if (refitting == 1 && implicitHeight > 0 && implicitWidth > 0) {
+        if (!refitting) {
+            refitting = true
+            refitTextRun()
+            refitting = false
+        }
+    }
+
+    function refitTextRun() {
+        if (implicitHeight > 0 && implicitWidth > 0) {
             if (font.pixelSize % 2) font.pixelSize++
-            while ((implicitWidth > maxWidth || implicitHeight > maxHeight) && (font.pixelSize - 2) >= minFontSize) {
+            while ((implicitWidth > maxWidth || implicitHeight > maxHeight || font.pixelSize > maxFontSize) && (font.pixelSize - 2) >= minFontSize) {
                 font.pixelSize -= 2
             }
             while (implicitWidth < maxWidth && implicitHeight < maxHeight && (font.pixelSize + 2) <= maxFontSize) {
@@ -72,6 +84,5 @@ Label {
                 font.pixelSize -= 2
             }
         }
-        refitting--
     }
 }
