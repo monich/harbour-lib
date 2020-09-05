@@ -74,8 +74,8 @@ public:
     SILICA_FUNCTIONS(SILICA_TYPEDEF)
     } SilicaFunctions;
 
-    static const qreal DEFAULT_OPACITY_LOW;
     static const qreal DEFAULT_OPACITY_FAINT;
+    static const qreal DEFAULT_OPACITY_LOW;
     static const qreal DEFAULT_OPACITY_HIGH;
     static const qreal DEFAULT_OPACITY_OVERLAY;
 
@@ -95,8 +95,8 @@ public:
 void* HarbourTheme::Private::gHandle;
 HarbourTheme::Private::SilicaFunctions HarbourTheme::Private::gSilica;
 
-const qreal HarbourTheme::Private::DEFAULT_OPACITY_LOW = 0.2;
-const qreal HarbourTheme::Private::DEFAULT_OPACITY_FAINT = 0.4;
+const qreal HarbourTheme::Private::DEFAULT_OPACITY_FAINT = 0.2;
+const qreal HarbourTheme::Private::DEFAULT_OPACITY_LOW = 0.4;
 const qreal HarbourTheme::Private::DEFAULT_OPACITY_HIGH = 0.6;
 const qreal HarbourTheme::Private::DEFAULT_OPACITY_OVERLAY = 0.8;
 
@@ -137,14 +137,14 @@ qreal HarbourTheme::Private::opacityFaint()
 {
     QObject* silica = instance();
     return (silica && gSilica.opacityFaint) ? gSilica.opacityFaint(silica) :
-        DEFAULT_OPACITY_LOW;
+        DEFAULT_OPACITY_FAINT;
 }
 
 qreal HarbourTheme::Private::opacityLow()
 {
     QObject* silica = instance();
     return (silica && gSilica.opacityLow) ? gSilica.opacityLow(silica) :
-        DEFAULT_OPACITY_FAINT;
+        DEFAULT_OPACITY_LOW;
 }
 
 qreal HarbourTheme::Private::opacityHigh()
