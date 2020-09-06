@@ -33,6 +33,7 @@ SOURCES += \
     src/HarbourSelectionListModel.cpp \
     src/HarbourSigChildHandler.cpp \
     src/HarbourSingleImageProvider.cpp \
+    src/HarbourSystem.cpp \
     src/HarbourSystemState.cpp \
     src/HarbourSystemTime.cpp \
     src/HarbourTask.cpp \
@@ -76,7 +77,8 @@ OTHER_FILES += qml/*.qml
 
 HEADERS += \
   $$PUBLIC_HEADERS \
-  src/HarbourMce.h
+  src/HarbourMce.h \
+  src/HarbourSystem.h
 
 OTHER_FILES += \
   LICENSE \

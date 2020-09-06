@@ -32,13 +32,14 @@
  */
 
 #include "HarbourTheme.h"
+#include "HarbourSystem.h"
 #include "HarbourDebug.h"
 
 #include <QQmlEngine>
 
 #include <dlfcn.h>
 
-#define SILICA_SO "/usr/lib/libsailfishsilica.so.1"
+#define SILICA_SO "libsailfishsilica.so.1"
 #define SILICA_FUNCTIONS(f) \
     f("_ZN6Silica5Theme8instanceEv", /* Silica::Theme* Silica::Theme::instance() */ \
         QObject*, instance,()) \
@@ -168,7 +169,7 @@ qreal HarbourTheme::Private::opacityOverlay()
 HarbourTheme::HarbourTheme(QObject* aParent) : QObject(aParent)
 {
     if (!Private::gHandle) {
-        Private::gHandle = dlopen(SILICA_SO, RTLD_LAZY);
+        Private::gHandle = HarbourDlopen(SILICA_SO, RTLD_LAZY);
         if (Private::gHandle) {
             void** ptr = (void**)&Private::gSilica;
             for (uint i = 0; i < NUM_FUNCTIONS; i++) {
