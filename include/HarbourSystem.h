@@ -34,6 +34,14 @@
 #ifndef HARBOUR_SYSTEM_H
 #define HARBOUR_SYSTEM_H
 
+#ifdef  __cplusplus
+extern "C" {
+#endif
+
 void* HarbourDlopen(const char* aLibFile, int aFlags);
+
+#ifdef  __cplusplus
+}
+#endif
 
 #endif // HARBOUR_SYSTEM_H

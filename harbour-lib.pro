@@ -62,6 +62,7 @@ PUBLIC_HEADERS += \
     include/HarbourSingleImageProvider.h \
     include/HarbourSystemState.h \
     include/HarbourSystemTime.h \
+    include/HarbourSystem.h \
     include/HarbourTask.h \
     include/HarbourTemporaryFile.h \
     include/HarbourTransferMethodInfo.h \
@@ -77,8 +78,7 @@ OTHER_FILES += qml/*.qml
 
 HEADERS += \
   $$PUBLIC_HEADERS \
-  src/HarbourMce.h \
-  src/HarbourSystem.h
+  src/HarbourMce.h
 
 OTHER_FILES += \
   LICENSE \
