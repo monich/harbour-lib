@@ -81,7 +81,8 @@ public:
     qreal opacityHigh() const;
     qreal opacityOverlay() const;
 
-    Q_INVOKABLE static QColor invertedColor(QColor aColor);
+    Q_INVOKABLE static QColor invertedColor(const QColor& aColor);
+    Q_INVOKABLE static qreal colorDifference(const QColor& aColor1, const QColor& aColor2);
 
 Q_SIGNALS:
     void colorSchemeChanged();

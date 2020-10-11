@@ -215,7 +215,7 @@ QColor HarbourTheme::invertedPrimaryColor() const
     return invertedColor(Private::primaryColor());
 }
 
-QColor HarbourTheme::invertedColor(QColor aColor)
+QColor HarbourTheme::invertedColor(const QColor& aColor)
 {
     if (aColor.isValid()) {
         const QRgb rgba = aColor.rgba();
@@ -223,6 +223,14 @@ QColor HarbourTheme::invertedColor(QColor aColor)
     } else {
         return aColor;
     }
+}
+
+qreal HarbourTheme::colorDifference(const QColor& aColor1, const QColor& aColor2)
+{
+    const qreal dr = aColor1.red() - aColor2.red();
+    const qreal dg = aColor1.green() - aColor2.green();
+    const qreal db = aColor1.blue() - aColor2.blue();
+    return dr * dr + dg * dg + db * db;
 }
 
 HarbourTheme::ColorScheme HarbourTheme::colorScheme() const
