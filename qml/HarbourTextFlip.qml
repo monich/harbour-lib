@@ -87,7 +87,7 @@ Rotation {
         }
     }
 
-    onTextChanged: {
+    function _updateTargetProperty() {
         if (!!target) {
             if (enabled) {
                 animation.start()
@@ -96,4 +96,7 @@ Rotation {
             }
         }
     }
+
+    onTextChanged: _updateTargetProperty()
+    onTargetChanged: _updateTargetProperty()
 }
