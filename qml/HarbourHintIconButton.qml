@@ -75,7 +75,7 @@ MouseArea {
         id: image
 
         highlightColor: _showPress ? Theme.highlightColor : Theme.primaryColor
-        sourceSize: Qt.size(Theme.itemSizeSmall, Theme.itemSizeSmall)
+        sourceSize: Qt.size(Theme.iconSizeMedium, Theme.iconSizeMedium)
         anchors.centerIn: parent
         opacity: parent.enabled ? 1.0 : 0.4
     }
