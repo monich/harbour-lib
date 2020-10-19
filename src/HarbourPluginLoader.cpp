@@ -1,6 +1,6 @@
 /*
  * Copyright (C) 2017-2020 Jolla Ltd.
- * Copyright (C) 2017-2020 Slava Monich <slava@monich.com>
+ * Copyright (C) 2017-2020 Slava Monich <slava.monich@jolla.com>
  *
  * You may use this file under the terms of the BSD license as follows:
  *
@@ -22,7 +22,7 @@
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
  * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * HOLDERS OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
  * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
  * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
  * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
@@ -126,13 +126,45 @@ QMLTYPE_FUNCTIONS(QMLTYPE_TYPEDEF)
 Q_STATIC_ASSERT(sizeof(QmlTypeFunctions) == NUM_FUNCTIONS*sizeof(void*));
 
 // ==========================================================================
+// HarbourPluginLoader::LibQt5Qml
+// ==========================================================================
+
+class HarbourPluginLoader::LibQt5Qml {
+public:
+
+    LibQt5Qml();
+
+public:
+    void* iHandle;
+    union {
+        QmlTypeFunctions fn;
+        void* ptr[NUM_FUNCTIONS];
+    } iSym;
+};
+
+HarbourPluginLoader::LibQt5Qml::LibQt5Qml() :
+    iHandle(HarbourDlopen(LIBQT5QML_SO, RTLD_LAZY))
+{
+    memset(&iSym, 0, sizeof(iSym));
+    if (iHandle) {
+        // Resolve unstable symbols
+        for (uint i = 0; i < NUM_FUNCTIONS; i++) {
+            iSym.ptr[i] = dlsym(iHandle, QmlTypeSymbols[i]);
+            HDEBUG(QmlTypeSymbols[i] << (iSym.ptr[i] ? "OK" : "missing"));
+        }
+        // No need to ever call dlclose(iHandle);
+    } else {
+        HWARN("Failed to load" << LIBQT5QML_SO);
+    }
+}
+
+// ==========================================================================
 // HarbourPluginLoader::Private
 // ==========================================================================
 
 class HarbourPluginLoader::Private {
 public:
     Private(QQmlEngine* aEngine, QString aModule, int aMajor, int aMinor);
-    ~Private();
 
     QQmlType* qmlType(QString aName);
 
@@ -144,17 +176,17 @@ public:
         const char* aModule, int aMajor, int aMinor);
 
 public:
+    static const LibQt5Qml gLibQt5Qml;
+
+public:
     QQmlEngine* iEngine;
     QString iModule;
     int iMajor;
     int iMinor;
     bool iLoaded;
-    void* iHandle;
-    union {
-        QmlTypeFunctions fn;
-        void* ptr[NUM_FUNCTIONS];
-    } iLibQt5Qml;
 };
+
+const HarbourPluginLoader::LibQt5Qml HarbourPluginLoader::Private::gLibQt5Qml;
 
 HarbourPluginLoader::Private::Private(
     QQmlEngine* aEngine,
@@ -165,37 +197,21 @@ HarbourPluginLoader::Private::Private(
     iModule(aModule),
     iMajor(aMajor),
     iMinor(aMinor),
-    iLoaded(false),
-    iHandle(NULL)
+    iLoaded(false)
 {
-    memset(&iLibQt5Qml, 0, sizeof(iLibQt5Qml));
-    // Load the actual import library
-    QQmlComponent* component = new QQmlComponent(iEngine);
-    component->setData(QString("import QtQuick 2.0\nimport %1 %2.%3\nQtObject {}").
-        arg(iModule).arg(iMajor).arg(iMinor).toUtf8(), QUrl());
-    if (component->status() == QQmlComponent::Ready) {
-        delete component->create();
-        // Resolve unstable symbols
-        iHandle = HarbourDlopen(LIBQT5QML_SO, RTLD_LAZY);
-        if (iHandle) {
-            for (uint i = 0; i < NUM_FUNCTIONS; i++) {
-                iLibQt5Qml.ptr[i] = dlsym(iHandle, QmlTypeSymbols[i]);
-                HDEBUG(QmlTypeSymbols[i] << (iLibQt5Qml.ptr[i] ? "OK" : "missing"));
-            }
+    HASSERT(gLibQt5Qml.iHandle);
+    if (gLibQt5Qml.iHandle) {
+        // Load the actual import library
+        QQmlComponent* component = new QQmlComponent(iEngine);
+        component->setData(QString("import QtQuick 2.0\nimport %1 %2.%3\nQtObject {}").
+            arg(iModule).arg(iMajor).arg(iMinor).toUtf8(), QUrl());
+        if (component->status() == QQmlComponent::Ready) {
+            delete component->create();
+            iLoaded = true;
         } else {
-            HWARN("Failed to load" << LIBQT5QML_SO);
+            HWARN(component->errors());
         }
-        iLoaded = true;
-    } else {
-        HWARN(component->errors());
-    }
-    delete component;
-}
-
-HarbourPluginLoader::Private::~Private()
-{
-    if (iHandle) {
-        dlclose(iHandle);
+        delete component;
     }
 }
 
@@ -246,16 +262,16 @@ HarbourPluginLoader::Private::reRegisterType(
     if (aType && iEngine) {
         // Get around the ABI break in Qt 5.6
         QQmlAttachedPropertiesFunc attachedPropertiesFunction =
-            iLibQt5Qml.fn.AttachedPropertiesFunctionProc ?
-            iLibQt5Qml.fn.AttachedPropertiesFunctionProc(aType) :
-            iLibQt5Qml.fn.AttachedPropertiesFunctionProc6 ?
-            iLibQt5Qml.fn.AttachedPropertiesFunctionProc6(aType, iEngine->d_func()) :
+            gLibQt5Qml.iSym.fn.AttachedPropertiesFunctionProc ?
+            gLibQt5Qml.iSym.fn.AttachedPropertiesFunctionProc(aType) :
+            gLibQt5Qml.iSym.fn.AttachedPropertiesFunctionProc6 ?
+            gLibQt5Qml.iSym.fn.AttachedPropertiesFunctionProc6(aType, iEngine->d_func()) :
             NULL;
         const QMetaObject *attachedPropertiesMetaObject =
-            iLibQt5Qml.fn.AttachedPropertiesTypeProc ?
-            iLibQt5Qml.fn.AttachedPropertiesTypeProc(aType) :
-            iLibQt5Qml.fn.AttachedPropertiesTypeProc6 ?
-            iLibQt5Qml.fn.AttachedPropertiesTypeProc6(aType, iEngine->d_func()) :
+            gLibQt5Qml.iSym.fn.AttachedPropertiesTypeProc ?
+            gLibQt5Qml.iSym.fn.AttachedPropertiesTypeProc(aType) :
+            gLibQt5Qml.iSym.fn.AttachedPropertiesTypeProc6 ?
+            gLibQt5Qml.iSym.fn.AttachedPropertiesTypeProc6(aType, iEngine->d_func()) :
             NULL;
         QQmlPrivate::RegisterType type = {
             0, // int version;
