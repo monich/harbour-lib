@@ -34,6 +34,7 @@ SOURCES += \
     src/HarbourSigChildHandler.cpp \
     src/HarbourSingleImageProvider.cpp \
     src/HarbourSystem.cpp \
+    src/HarbourSystemInfo.cpp \
     src/HarbourSystemState.cpp \
     src/HarbourSystemTime.cpp \
     src/HarbourTask.cpp \
@@ -60,9 +61,10 @@ PUBLIC_HEADERS += \
     include/HarbourSelectionListModel.h \
     include/HarbourSigChildHandler.h \
     include/HarbourSingleImageProvider.h \
+    include/HarbourSystem.h \
+    include/HarbourSystemInfo.h \
     include/HarbourSystemState.h \
     include/HarbourSystemTime.h \
-    include/HarbourSystem.h \
     include/HarbourTask.h \
     include/HarbourTemporaryFile.h \
     include/HarbourTransferMethodInfo.h \
