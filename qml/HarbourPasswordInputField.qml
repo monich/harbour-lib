@@ -47,10 +47,7 @@ TextField {
     textRightMargin: textMargin
     echoMode: _usePasswordEchoMode ? passwordEchoMode : TextInput.Normal
     inputMethodHints: Qt.ImhNoPredictiveText | Qt.ImhNoAutoUppercase
-
-    //: Default placeholder for password field
-    //% "Password"
-    placeholderText: qsTrId("components-ph-password")
+    placeholderText: label
 
     //: Default label for password field
     //% "Password"
