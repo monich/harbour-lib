@@ -92,11 +92,13 @@ public:
     QDBusPendingCallWatcher* requestTransferMethods();
     QDBusPendingCallWatcher* requestTransferMethods2();
     void setTransferMethods2(HarbourTransferMethodInfo2List aList);
+    bool showAccounts();
 
 private Q_SLOTS:
     void onTransferMethodsCheckFinished(QDBusPendingCallWatcher* aWatch);
     void onTransferMethodsFinished(QDBusPendingCallWatcher* aWatch);
     void onTransferMethods2Finished(QDBusPendingCallWatcher* aWatch);
+    void onShowAccountsFinished(QDBusPendingCallWatcher* aWatch);
     void requestUpdate();
 
 public:
@@ -106,6 +108,8 @@ public:
     bool iAccountIconSupported;
     RequestUpdate iRequestUpdate;
     QDBusPendingCallWatcher* iUpdateWatcher;
+    QDBusPendingCallWatcher* iShowAccountsWatcher;
+    bool iShowAccountsFailed;
     TransferEngine* iTransferEngine;
 };
 
@@ -114,6 +118,8 @@ HarbourTransferMethodsModel::Private::Private(HarbourTransferMethodsModel* aMode
     iAccountIconSupported(false),
     iRequestUpdate(&Private::checkTransferMethods),
     iUpdateWatcher(Q_NULLPTR),
+    iShowAccountsWatcher(Q_NULLPTR),
+    iShowAccountsFailed(false),
     iTransferEngine(new TransferEngine(this))
 {
     connect(iTransferEngine,
@@ -135,10 +141,9 @@ inline HarbourTransferMethodsModel* HarbourTransferMethodsModel::Private::parent
 void HarbourTransferMethodsModel::Private::requestUpdate()
 {
     if (iUpdateWatcher) {
-        HDEBUG("dropping pending call");
+        HDEBUG("dropping pending method list query");
         iUpdateWatcher->disconnect(this);
         delete iUpdateWatcher;
-        iUpdateWatcher = Q_NULLPTR;
     }
     iUpdateWatcher = (this->*iRequestUpdate)();
 }
@@ -284,6 +289,43 @@ void HarbourTransferMethodsModel::Private::filterModel()
     }
 }
 
+bool HarbourTransferMethodsModel::Private::showAccounts()
+{
+    bool wasPending;
+    if (iShowAccountsWatcher) {
+        HDEBUG("dropping pending showAccounts");
+        iShowAccountsWatcher->disconnect(this);
+        delete iShowAccountsWatcher;
+        wasPending = true;
+    } else {
+        wasPending = true;
+    }
+    connect(iShowAccountsWatcher = new QDBusPendingCallWatcher(QDBusConnection::sessionBus().
+        asyncCall(QDBusMessage::createMethodCall(QStringLiteral("com.jolla.settings"),
+        QStringLiteral("/com/jolla/settings/ui"), QStringLiteral("com.jolla.settings.ui"),
+        QStringLiteral("showAccounts"))), this),
+        SIGNAL(finished(QDBusPendingCallWatcher*)),
+        SLOT(onShowAccountsFinished(QDBusPendingCallWatcher*)));
+    return !wasPending;
+}
+
+void HarbourTransferMethodsModel::Private::onShowAccountsFinished(QDBusPendingCallWatcher* aWatch)
+{
+    HarbourTransferMethodsModel* model = parentModel();
+    QDBusPendingReply<> reply(*aWatch);
+    HASSERT(aWatch == iShowAccountsWatcher);
+    iShowAccountsWatcher = Q_NULLPTR;
+    if (reply.isError()) {
+        qWarning() << reply.error();
+        if (!iShowAccountsFailed) {
+            iShowAccountsFailed = true;
+            Q_EMIT model->canShowAccountsChanged();
+        }
+    }
+    Q_EMIT model->showAccountsPendingChanged();
+    aWatch->deleteLater();
+}
+
 // ==========================================================================
 // HarbourTransferMethodsModel
 // ==========================================================================
@@ -379,6 +421,23 @@ void HarbourTransferMethodsModel::setFilter(QString aFilter)
         iPrivate->iFilter = aFilter;
         iPrivate->filterModel();
         Q_EMIT filterChanged();
+    }
+}
+
+bool HarbourTransferMethodsModel::showAccountsPending() const
+{
+    return iPrivate->iShowAccountsWatcher != Q_NULLPTR;
+}
+
+bool HarbourTransferMethodsModel::canShowAccounts() const
+{
+    return !iPrivate->iShowAccountsFailed;
+}
+
+void HarbourTransferMethodsModel::showAccounts()
+{
+    if (iPrivate->showAccounts()) {
+        Q_EMIT showAccountsPendingChanged();
     }
 }
 

@@ -48,6 +48,8 @@ class HarbourTransferMethodsModel: public QAbstractListModel
     Q_PROPERTY(int count READ count NOTIFY countChanged)
     Q_PROPERTY(QString filter READ filter WRITE setFilter NOTIFY filterChanged)
     Q_PROPERTY(bool accountIconSupported READ accountIconSupported NOTIFY accountIconSupportedChanged)
+    Q_PROPERTY(bool showAccountsPending READ showAccountsPending NOTIFY showAccountsPendingChanged)
+    Q_PROPERTY(bool canShowAccounts READ canShowAccounts NOTIFY canShowAccountsChanged)
 
 public:
     explicit HarbourTransferMethodsModel(QObject* aParent = Q_NULLPTR);
@@ -62,6 +64,10 @@ public:
     QString filter() const;
     void setFilter(QString filter);
     bool accountIconSupported() const;
+    bool showAccountsPending() const;
+    bool canShowAccounts() const;
+
+    Q_INVOKABLE void showAccounts();
 
     // QAbstractListModel
     QHash<int,QByteArray> roleNames() const Q_DECL_OVERRIDE;
@@ -72,6 +78,8 @@ Q_SIGNALS:
     void countChanged();
     void filterChanged();
     void accountIconSupportedChanged();
+    void showAccountsPendingChanged();
+    void canShowAccountsChanged();
 
 private:
     class Private;
