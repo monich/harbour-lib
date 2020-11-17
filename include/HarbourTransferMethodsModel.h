@@ -1,6 +1,6 @@
 /*
- * Copyright (C) 2016-2019 Jolla Ltd.
- * Copyright (C) 2016-2019 Slava Monich <slava.monich@jolla.com>
+ * Copyright (C) 2016-2020 Jolla Ltd.
+ * Copyright (C) 2016-2020 Slava Monich <slava.monich@jolla.com>
  *
  * You may use this file under the terms of the BSD license as follows:
  *
@@ -22,7 +22,7 @@
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
  * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * HOLDERS OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
  * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
  * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
  * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
@@ -37,7 +37,6 @@
 #include "HarbourTransferMethodInfo.h"
 
 #include <QLocale>
-#include <QRegExp>
 
 class QTranslator;
 class QQmlEngine;
@@ -49,17 +48,6 @@ class HarbourTransferMethodsModel: public QAbstractListModel
     Q_PROPERTY(int count READ count NOTIFY countChanged)
     Q_PROPERTY(QString filter READ filter WRITE setFilter NOTIFY filterChanged)
     Q_PROPERTY(bool accountIconSupported READ accountIconSupported NOTIFY accountIconSupportedChanged)
-    typedef QDBusPendingCallWatcher* (HarbourTransferMethodsModel::*RequestUpdate)();
-
-public:
-    enum TransferMethodsRole {
-        DisplayNameRole = Qt::UserRole + 1,
-        UserNameRole,
-        MethodIdRole,
-        ShareUIPathRole,
-        AccountIdRole,
-        AccountIconRole
-    };
 
 public:
     explicit HarbourTransferMethodsModel(QObject* aParent = Q_NULLPTR);
@@ -75,23 +63,10 @@ public:
     void setFilter(QString filter);
     bool accountIconSupported() const;
 
+    // QAbstractListModel
     QHash<int,QByteArray> roleNames() const Q_DECL_OVERRIDE;
     int rowCount(const QModelIndex& aParent) const Q_DECL_OVERRIDE;
     QVariant data(const QModelIndex& aIndex, int aRole) const Q_DECL_OVERRIDE;
-
-private:
-    void filterModel();
-    static QRegExp regExp(QString aRegExp);
-    QDBusPendingCallWatcher* checkTransferMethods();
-    QDBusPendingCallWatcher* requestTransferMethods();
-    QDBusPendingCallWatcher* requestTransferMethods2();
-    void setTransferMethods2(HarbourTransferMethodInfo2List aList);
-
-private Q_SLOTS:
-    void onTransferMethodsCheckFinished(QDBusPendingCallWatcher* aWatch);
-    void onTransferMethodsFinished(QDBusPendingCallWatcher* aWatch);
-    void onTransferMethods2Finished(QDBusPendingCallWatcher* aWatch);
-    void requestUpdate();
 
 Q_SIGNALS:
     void countChanged();
@@ -99,14 +74,9 @@ Q_SIGNALS:
     void accountIconSupportedChanged();
 
 private:
+    class Private;
     class TransferEngine;
-    TransferEngine* iTransferEngine;
-    QString iFilter;
-    QList<HarbourTransferMethodInfo2> iMethodList;
-    QList<int> iFilteredList;
-    bool iAccountIconSupported;
-    RequestUpdate iRequestUpdate;
-    QDBusPendingCallWatcher* iUpdateWatcher;
+    Private* iPrivate;
 };
 
 #endif // HARBOUR_TRANSFER_METHODS_MODEL_H

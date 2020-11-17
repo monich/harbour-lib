@@ -22,7 +22,7 @@
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
  * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * HOLDERS OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
  * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
  * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
  * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
@@ -36,6 +36,7 @@
 
 #include <QTranslator>
 #include <QQmlEngine>
+#include <QRegExp>
 
 // ==========================================================================
 // HarbourTransferMethodsModel::TransferEngine
@@ -45,69 +46,93 @@ class HarbourTransferMethodsModel::TransferEngine: public QDBusAbstractInterface
 {
     Q_OBJECT
 
-    static const char SERVICE[];
-    static const char PATH[];
-    static const char INTERFACE[];
-
 public:
-    TransferEngine(QObject* aParent) : QDBusAbstractInterface(SERVICE, PATH,
-        INTERFACE, QDBusConnection::sessionBus(), aParent) {}
+    TransferEngine(QObject* aParent) :
+        QDBusAbstractInterface(QStringLiteral("org.nemo.transferengine"),
+            QStringLiteral("/org/nemo/transferengine"), "org.nemo.transferengine",
+            QDBusConnection::sessionBus(), aParent) {}
 
 public: // METHODS
     inline QDBusPendingCall transferMethods()
-        { return asyncCall("transferMethods"); }
+        { return asyncCall(QStringLiteral("transferMethods")); }
     inline QDBusPendingCall transferMethods2()
-        { return asyncCall("transferMethods2"); }
+        { return asyncCall(QStringLiteral("transferMethods2")); }
 
 Q_SIGNALS: // SIGNALS
     void transferMethodListChanged();
 };
 
-const char HarbourTransferMethodsModel::TransferEngine::SERVICE[] = "org.nemo.transferengine";
-const char HarbourTransferMethodsModel::TransferEngine::PATH[] = "/org/nemo/transferengine";
-const char HarbourTransferMethodsModel::TransferEngine::INTERFACE[] = "org.nemo.transferengine";
-
 // ==========================================================================
-// HarbourTransferMethodsModel
+// HarbourTransferMethodsModel::Private
 // ==========================================================================
 
-HarbourTransferMethodsModel::HarbourTransferMethodsModel(QObject* aParent):
-    QAbstractListModel(aParent),
-    iAccountIconSupported(false),
-    iRequestUpdate(&HarbourTransferMethodsModel::checkTransferMethods),
-    iUpdateWatcher(Q_NULLPTR)
+class HarbourTransferMethodsModel::Private: public QObject
 {
-    iTransferEngine = new TransferEngine(this);
+    Q_OBJECT
+    typedef QDBusPendingCallWatcher* (Private::*RequestUpdate)();
+
+public:
+    enum Role {
+        DisplayNameRole = Qt::UserRole + 1,
+        UserNameRole,
+        MethodIdRole,
+        ShareUIPathRole,
+        AccountIdRole,
+        AccountIconRole
+    };
+
+    Private(HarbourTransferMethodsModel* aModel);
+    ~Private();
+
+public:
+    HarbourTransferMethodsModel* parentModel();
+    static QRegExp regExp(QString aRegExp);
+    void filterModel();
+    QDBusPendingCallWatcher* checkTransferMethods();
+    QDBusPendingCallWatcher* requestTransferMethods();
+    QDBusPendingCallWatcher* requestTransferMethods2();
+    void setTransferMethods2(HarbourTransferMethodInfo2List aList);
+
+private Q_SLOTS:
+    void onTransferMethodsCheckFinished(QDBusPendingCallWatcher* aWatch);
+    void onTransferMethodsFinished(QDBusPendingCallWatcher* aWatch);
+    void onTransferMethods2Finished(QDBusPendingCallWatcher* aWatch);
+    void requestUpdate();
+
+public:
+    QString iFilter;
+    QList<HarbourTransferMethodInfo2> iMethodList;
+    QList<int> iFilteredList;
+    bool iAccountIconSupported;
+    RequestUpdate iRequestUpdate;
+    QDBusPendingCallWatcher* iUpdateWatcher;
+    TransferEngine* iTransferEngine;
+};
+
+HarbourTransferMethodsModel::Private::Private(HarbourTransferMethodsModel* aModel) :
+    QObject(aModel),
+    iAccountIconSupported(false),
+    iRequestUpdate(&Private::checkTransferMethods),
+    iUpdateWatcher(Q_NULLPTR),
+    iTransferEngine(new TransferEngine(this))
+{
     connect(iTransferEngine,
         SIGNAL(transferMethodListChanged()),
         SLOT(requestUpdate()));
     requestUpdate();
 }
 
-HarbourTransferMethodsModel::~HarbourTransferMethodsModel()
+HarbourTransferMethodsModel::Private::~Private()
 {
     delete iTransferEngine;
 }
 
-// Callback for qmlRegisterSingletonType<HarbourTransferMethodsModel>
-QObject*
-HarbourTransferMethodsModel::createSingleton(QQmlEngine*, QJSEngine*)
+inline HarbourTransferMethodsModel* HarbourTransferMethodsModel::Private::parentModel()
 {
-    return new HarbourTransferMethodsModel();
+    return qobject_cast<HarbourTransferMethodsModel*>(parent());
 }
 
-bool HarbourTransferMethodsModel::loadTranslations(QTranslator* aTranslator, QLocale aLocale)
-{
-    if (aTranslator->load(aLocale, "sailfish_transferengine_plugins", "-",
-        "/usr/share/translations")) {
-        return true;
-    } else {
-        HWARN("Failed to load transferengine plugin translator for" << aLocale);
-        return false;
-    }
-}
-
-void HarbourTransferMethodsModel::requestUpdate()
+void HarbourTransferMethodsModel::Private::requestUpdate()
 {
     if (iUpdateWatcher) {
         HDEBUG("dropping pending call");
@@ -118,9 +143,9 @@ void HarbourTransferMethodsModel::requestUpdate()
     iUpdateWatcher = (this->*iRequestUpdate)();
 }
 
-void HarbourTransferMethodsModel::setTransferMethods2(HarbourTransferMethodInfo2List aList)
+void HarbourTransferMethodsModel::Private::setTransferMethods2(HarbourTransferMethodInfo2List aList)
 {
-    iRequestUpdate = &HarbourTransferMethodsModel::requestTransferMethods2;
+    iRequestUpdate = &Private::requestTransferMethods2;
     HDEBUG(aList.count() << "methods");
     if (iMethodList != aList) {
         iMethodList = aList;
@@ -128,11 +153,11 @@ void HarbourTransferMethodsModel::setTransferMethods2(HarbourTransferMethodInfo2
     }
     if (!iAccountIconSupported) {
         iAccountIconSupported = true;
-        Q_EMIT accountIconSupportedChanged();
+        Q_EMIT parentModel()->accountIconSupportedChanged();
     }
 }
 
-QDBusPendingCallWatcher* HarbourTransferMethodsModel::checkTransferMethods()
+QDBusPendingCallWatcher* HarbourTransferMethodsModel::Private::checkTransferMethods()
 {
     // First try transferMethods2() and see if it works
     QDBusPendingCallWatcher* watcher = new QDBusPendingCallWatcher
@@ -142,7 +167,7 @@ QDBusPendingCallWatcher* HarbourTransferMethodsModel::checkTransferMethods()
     return watcher;
 }
 
-QDBusPendingCallWatcher* HarbourTransferMethodsModel::requestTransferMethods()
+QDBusPendingCallWatcher* HarbourTransferMethodsModel::Private::requestTransferMethods()
 {
     QDBusPendingCallWatcher* watcher = new QDBusPendingCallWatcher
         (iTransferEngine->transferMethods(), this);
@@ -151,7 +176,7 @@ QDBusPendingCallWatcher* HarbourTransferMethodsModel::requestTransferMethods()
     return watcher;
 }
 
-QDBusPendingCallWatcher* HarbourTransferMethodsModel::requestTransferMethods2()
+QDBusPendingCallWatcher* HarbourTransferMethodsModel::Private::requestTransferMethods2()
 {
     QDBusPendingCallWatcher* watcher = new QDBusPendingCallWatcher
         (iTransferEngine->transferMethods2(), this);
@@ -160,10 +185,9 @@ QDBusPendingCallWatcher* HarbourTransferMethodsModel::requestTransferMethods2()
     return watcher;
 }
 
-void HarbourTransferMethodsModel::onTransferMethodsCheckFinished(QDBusPendingCallWatcher* aWatch)
+void HarbourTransferMethodsModel::Private::onTransferMethodsCheckFinished(QDBusPendingCallWatcher* aWatch)
 {
     QDBusPendingReply<HarbourTransferMethodInfo2List> reply(*aWatch);
-    aWatch->deleteLater();
     HASSERT(aWatch == iUpdateWatcher);
     iUpdateWatcher = Q_NULLPTR;
     if (reply.isError()) {
@@ -171,18 +195,18 @@ void HarbourTransferMethodsModel::onTransferMethodsCheckFinished(QDBusPendingCal
         qWarning() << error;
         if (error.type() == QDBusError::UnknownMethod) {
             // Switch to the legacy interface
-            iRequestUpdate = &HarbourTransferMethodsModel::requestTransferMethods;
+            iRequestUpdate = &Private::requestTransferMethods;
             requestUpdate();
         }
     } else {
         setTransferMethods2(reply.value());
     }
+    aWatch->deleteLater();
 }
 
-void HarbourTransferMethodsModel::onTransferMethods2Finished(QDBusPendingCallWatcher* aWatch)
+void HarbourTransferMethodsModel::Private::onTransferMethods2Finished(QDBusPendingCallWatcher* aWatch)
 {
     QDBusPendingReply<HarbourTransferMethodInfo2List> reply(*aWatch);
-    aWatch->deleteLater();
     HASSERT(aWatch == iUpdateWatcher);
     iUpdateWatcher = Q_NULLPTR;
     if (reply.isError()) {
@@ -190,12 +214,12 @@ void HarbourTransferMethodsModel::onTransferMethods2Finished(QDBusPendingCallWat
     } else {
         setTransferMethods2(reply.value());
     }
+    aWatch->deleteLater();
 }
 
-void HarbourTransferMethodsModel::onTransferMethodsFinished(QDBusPendingCallWatcher* aWatch)
+void HarbourTransferMethodsModel::Private::onTransferMethodsFinished(QDBusPendingCallWatcher* aWatch)
 {
     QDBusPendingReply<HarbourTransferMethodInfoList> reply(*aWatch);
-    aWatch->deleteLater();
     HASSERT(aWatch == iUpdateWatcher);
     iUpdateWatcher = Q_NULLPTR;
     if (reply.isError()) {
@@ -213,43 +237,121 @@ void HarbourTransferMethodsModel::onTransferMethodsFinished(QDBusPendingCallWatc
             filterModel();
         }
     }
+    aWatch->deleteLater();
+}
+
+QRegExp HarbourTransferMethodsModel::Private::regExp(QString aRegExp)
+{
+    return QRegExp(aRegExp, Qt::CaseInsensitive, QRegExp::Wildcard);
+}
+
+void HarbourTransferMethodsModel::Private::filterModel()
+{
+    QList<int> filteredList;
+    if (iFilter.isEmpty() || iFilter == "*") {
+        HDEBUG("no filter");
+        for (int i = 0; i < iMethodList.count(); i++) {
+            filteredList.append(i);
+        }
+    } else {
+        QRegExp re(regExp(iFilter));
+        for (int i = 0; i < iMethodList.count(); i++) {
+            const HarbourTransferMethodInfo2& info = iMethodList.at(i);
+            for (int j = 0; j < info.capabilitities.count(); j++) {
+                const QString& cap = info.capabilitities.at(j);
+                if (iFilter == cap ||
+                    re.exactMatch(cap) ||
+                    regExp(cap).exactMatch(iFilter)) {
+                    HDEBUG(i << ":" << iFilter << "matches" << cap);
+                    filteredList.append(i);
+                    break;
+                } else {
+                    HDEBUG(i << ":" << iFilter << "doesn't match" << cap);
+                }
+            }
+        }
+    }
+    if (iFilteredList != filteredList) {
+        HDEBUG("Methods changed");
+        HarbourTransferMethodsModel* model = parentModel();
+        model->beginResetModel();
+        const int oldCount = iFilteredList.count();
+        iFilteredList = filteredList;
+        if (oldCount != iFilteredList.count()) {
+            Q_EMIT model->countChanged();
+        }
+        model->endResetModel();
+    }
+}
+
+// ==========================================================================
+// HarbourTransferMethodsModel
+// ==========================================================================
+
+HarbourTransferMethodsModel::HarbourTransferMethodsModel(QObject* aParent):
+    QAbstractListModel(aParent),
+    iPrivate(new Private(this))
+{
+}
+
+HarbourTransferMethodsModel::~HarbourTransferMethodsModel()
+{
+    delete iPrivate;
+}
+
+// Callback for qmlRegisterSingletonType<HarbourTransferMethodsModel>
+QObject* HarbourTransferMethodsModel::createSingleton(QQmlEngine*, QJSEngine*)
+{
+    return new HarbourTransferMethodsModel();
+}
+
+bool HarbourTransferMethodsModel::loadTranslations(QTranslator* aTranslator, QLocale aLocale)
+{
+    if (aTranslator->load(aLocale, "sailfish_transferengine_plugins", "-",
+        "/usr/share/translations")) {
+        return true;
+    } else {
+        HWARN("Failed to load transferengine plugin translator for" << aLocale);
+        return false;
+    }
 }
 
 QHash<int,QByteArray> HarbourTransferMethodsModel::roleNames() const
 {
     QHash<int,QByteArray> roles;
-    roles[DisplayNameRole] = "displayName";
-    roles[UserNameRole]    = "userName";
-    roles[MethodIdRole]    = "methodId";
-    roles[ShareUIPathRole] = "shareUIPath";
-    roles[AccountIdRole]   = "accountId";
-    roles[AccountIconRole] = "accountIcon";
+    roles[Private::DisplayNameRole] = "displayName";
+    roles[Private::UserNameRole]    = "userName";
+    roles[Private::MethodIdRole]    = "methodId";
+    roles[Private::ShareUIPathRole] = "shareUIPath";
+    roles[Private::AccountIdRole]   = "accountId";
+    roles[Private::AccountIconRole] = "accountIcon";
     return roles;
 }
 
 int HarbourTransferMethodsModel::rowCount(const QModelIndex &) const
 {
-    return iFilteredList.count();
+    return iPrivate->iFilteredList.count();
 }
 
 QVariant HarbourTransferMethodsModel::data(const QModelIndex &index, int role) const
 {
     int row = index.row();
-    if (row >= 0 && row < iFilteredList.count()) {
-        const HarbourTransferMethodInfo2& info = iMethodList.at(iFilteredList.at(row));
+    if (row >= 0 && row < iPrivate->iFilteredList.count()) {
+        const int pos = iPrivate->iFilteredList.at(row);
+        const HarbourTransferMethodInfo2& info = iPrivate->iMethodList.at(pos);
         switch (role) {
-        case DisplayNameRole: {
+        case Private::DisplayNameRole: {
             QString s(qApp->translate(Q_NULLPTR, qPrintable(info.displayName)));
             if (!s.isEmpty()) return s;
             /* Otherwise default to methodId */
             HDEBUG("no translation for" << info.displayName);
         }
         /* fallthrough */
-        case MethodIdRole:    return info.methodId;
-        case UserNameRole:    return info.userName;
-        case ShareUIPathRole: return info.shareUIPath;
-        case AccountIdRole:   return info.accountId;
-        case AccountIconRole: return info.accountIcon;
+        case Private::MethodIdRole:    return info.methodId;
+        case Private::UserNameRole:    return info.userName;
+        case Private::ShareUIPathRole: return info.shareUIPath;
+        case Private::AccountIdRole:   return info.accountId;
+        case Private::AccountIconRole: return info.accountIcon;
         }
     }
     qWarning() << index << role;
@@ -258,65 +360,26 @@ QVariant HarbourTransferMethodsModel::data(const QModelIndex &index, int role) c
 
 int HarbourTransferMethodsModel::count() const
 {
-    return iFilteredList.count();
+    return iPrivate->iFilteredList.count();
 }
 
 bool HarbourTransferMethodsModel::accountIconSupported() const
 {
-    return iAccountIconSupported;
+    return iPrivate->iAccountIconSupported;
 }
 
 QString HarbourTransferMethodsModel::filter() const
 {
-    return iFilter;
+    return iPrivate->iFilter;
 }
 
 void HarbourTransferMethodsModel::setFilter(QString aFilter)
 {
-    if (iFilter != aFilter) {
-        iFilter = aFilter;
-        filterModel();
+    if (iPrivate->iFilter != aFilter) {
+        iPrivate->iFilter = aFilter;
+        iPrivate->filterModel();
         Q_EMIT filterChanged();
     }
-}
-
-QRegExp HarbourTransferMethodsModel::regExp(QString aRegExp)
-{
-    return QRegExp(aRegExp, Qt::CaseInsensitive, QRegExp::Wildcard);
-}
-
-void HarbourTransferMethodsModel::filterModel()
-{
-    beginResetModel();
-    const int oldCount = iFilteredList.count();
-    iFilteredList.clear();
-    if (iFilter.isEmpty() || iFilter == "*") {
-        HDEBUG("no filter");
-        for (int i=0; i<iMethodList.count(); i++) {
-            iFilteredList.append(i);
-        }
-    } else {
-        QRegExp re(regExp(iFilter));
-        for (int i=0; i<iMethodList.count(); i++) {
-            const HarbourTransferMethodInfo2& info = iMethodList.at(i);
-            for (int j=0; j<info.capabilitities.count(); j++) {
-                const QString& cap = info.capabilitities.at(j);
-                if (iFilter == cap ||
-                    re.exactMatch(cap) ||
-                    regExp(cap).exactMatch(iFilter)) {
-                    HDEBUG(i << ":" << iFilter << "matches" << cap);
-                    iFilteredList.append(i);
-                    break;
-                } else {
-                    HDEBUG(i << ":" << iFilter << "doesn't match" << cap);
-                }
-            }
-        }
-    }
-    if (oldCount != iFilteredList.count()) {
-        Q_EMIT countChanged();
-    }
-    endResetModel();
 }
 
 #include "HarbourTransferMethodsModel.moc"
