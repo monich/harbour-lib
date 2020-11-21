@@ -39,7 +39,7 @@
 #define HARBOUR_SYSTEM_INFO_H
 
 #include <QObject>
-#include <QSharedPointer>
+#include <QVector>
 
 class QQmlEngine;
 class QJSEngine;
@@ -62,6 +62,7 @@ public:
     QString osVersion() const;
 
     Q_INVOKABLE int osVersionCompare(QString aVersion);
+    static int osVersionCompareWith(QString aVersion);
 
 private:
     class Private;

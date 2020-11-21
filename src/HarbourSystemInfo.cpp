@@ -51,10 +51,17 @@
 class HarbourSystemInfo::Private
 {
 public:
+    static const QString NAME;
+    static const QString VERSION_ID;
+
+public:
     Private();
 
     static QHash<QString,QString> parseFile(QString aFileName, const QStringList aKeys);
+    static QHash<QString,QString> parseOsRelease(const QStringList aKeys);
     static QVector<uint> parseVersion(QString aVersion);
+    static int compareVersions(const QVector<uint> aVersion1, const QVector<uint> aVersion2);
+    static int compareVersions(const QVector<uint> aVersion1, const QString aVersion2);
 
 public:
     QString iName;
@@ -62,19 +69,24 @@ public:
     QVector<uint> iParsedVersion;
 };
 
+const QString HarbourSystemInfo::Private::NAME("NAME");
+const QString HarbourSystemInfo::Private::VERSION_ID("VERSION_ID");
+
 HarbourSystemInfo::Private::Private()
 {
-    const QString nameKey("NAME");
-    const QString versionKey("VERSION_ID");
-
     QStringList keys;
-    keys.append(nameKey);
-    keys.append(versionKey);
+    keys.append(NAME);
+    keys.append(VERSION_ID);
 
-    QHash<QString,QString> values(parseFile("/etc/os-release", keys));
-    iName = values.value(nameKey);
-    iVersion = values.value(versionKey);
+    QHash<QString,QString> values(parseOsRelease(keys));
+    iName = values.value(NAME);
+    iVersion = values.value(VERSION_ID);
     iParsedVersion = parseVersion(iVersion);
+}
+
+inline QHash<QString,QString> HarbourSystemInfo::Private::parseOsRelease(const QStringList aKeys)
+{
+    return parseFile("/etc/os-release", aKeys);
 }
 
 QHash<QString,QString> HarbourSystemInfo::Private::parseFile(QString aPath, const QStringList aKeys)
@@ -123,6 +135,30 @@ QVector<uint> HarbourSystemInfo::Private::parseVersion(QString aVersion)
     return parsed;
 }
 
+int HarbourSystemInfo::Private::compareVersions(const QVector<uint> aVersion1,
+    const QVector<uint> aVersion2)
+{
+    const int n1 = aVersion1.size();
+    const int n2 = aVersion2.size();
+    const int n = qMin(n1, n2);
+    for (int i = 0; i < n; i++) {
+        const uint v1 = aVersion1.at(i);
+        const uint v2 = aVersion2.at(i);
+        if (v1 > v2) {
+            return 1;
+        } else if (v1 < v2) {
+            return -1;
+        }
+    }
+    return (n1 > n2) ? 1 : (n1 < n2) ? -1 : 0;
+}
+
+inline int HarbourSystemInfo::Private::compareVersions(const QVector<uint> aVersion1,
+    const QString aVersion2)
+{
+    return compareVersions(aVersion1, Private::parseVersion(aVersion2));
+}
+
 // ==========================================================================
 // HarbourSystemInfo
 // ==========================================================================
@@ -158,18 +194,12 @@ QString HarbourSystemInfo::osVersion() const
 
 int HarbourSystemInfo::osVersionCompare(QString aVersion)
 {
-    const QVector<uint> parsed(Private::parseVersion(aVersion));
-    const int n1 = iPrivate->iParsedVersion.size();
-    const int n2 = parsed.size();
-    const int n = qMin(n1, n2);
-    for (int i = 0; i < n; i++) {
-        const uint v1 = iPrivate->iParsedVersion.at(i);
-        const uint v2 = parsed.at(i);
-        if (v1 > v2) {
-            return 1;
-        } else if (v1 < v2) {
-            return -1;
-        }
-    }
-    return (n1 > n2) ? 1 : (n1 < n2) ? -1 : 0;
+    return Private::compareVersions(iPrivate->iParsedVersion, aVersion);
+}
+
+int HarbourSystemInfo::osVersionCompareWith(QString aVersion)
+{
+    const QStringList keys(Private::VERSION_ID);
+    const QString os(Private::parseOsRelease(keys).value(Private::VERSION_ID));
+    return Private::compareVersions(Private::parseVersion(os), aVersion);
 }
