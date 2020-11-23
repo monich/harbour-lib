@@ -3,7 +3,7 @@ Reusable components for Jolla harbour apps
 
 Some of them allow to access undocumented Sailfish OS features, some
 provide compatibility with older releases of Sailfish OS. This code
-has been tested agaist Sailfish OS 2.0 meaning that most of it is
+has been tested against Sailfish OS 2.0 meaning that most of it is
 probably incompatible with older versions.
 
 The easiest way to use this code in your project is to add this repo
