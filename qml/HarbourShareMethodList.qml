@@ -38,12 +38,21 @@ SilicaListView {
     id: view
 
     property url source
-    readonly property bool accountIconSupported: model.accountIconSupported
-    property string addAccountText: "Add account"
-    // model: HarbourTransferMethodsModel
+    property string subject
+    property string emailTo
+    property string type
 
     width: parent.width
     height: Theme.itemSizeSmall * model.count
+
+    property string addAccountText: "Add account"
+    readonly property bool accountIconSupported: model.accountIconSupported
+    property var content: []
+    // model: HarbourTransferMethodsModel
+
+    onTypeChanged: content.type = type
+
+    Component.onCompleted: content.type = type
 
     delegate: BackgroundItem {
         id: backgroundItem
@@ -90,12 +99,15 @@ SilicaListView {
         }
 
         onClicked: {
-            pageStack.push(shareUIPath, {
+            pageStack.push(model.shareUIPath, {
                 source: view.source,
-                methodId: methodId,
-                displayName: displayName,
-                accountId: accountId,
-                accountName: userName
+                content: content,
+                methodId: model.methodId,
+                displayName: model.displayName,
+                accountId: model.accountId,
+                accountName: model.userName,
+                emailTo: view.emailTo,
+                emailSubject: view.subject
             })
         }
     }
