@@ -1,6 +1,6 @@
 /*
- * Copyright (C) 2019-2020 Jolla Ltd.
- * Copyright (C) 2019-2020 Slava Monich <slava@monich.com>
+ * Copyright (C) 2019-2021 Jolla Ltd.
+ * Copyright (C) 2019-2021 Slava Monich <slava@monich.com>
  *
  * You may use this file under the terms of BSD license as follows:
  *
@@ -41,6 +41,7 @@ Rotation {
     property real duration: 500
     property bool enabled: true
     property string property: "text"
+    readonly property bool running: animation.running
 
     property var animation: SequentialAnimation {
         alwaysRunToEnd: true
