@@ -1,6 +1,6 @@
 /*
- * Copyright (C) 2018 Jolla Ltd.
- * Copyright (C) 2018 Slava Monich <slava@monich.com>
+ * Copyright (C) 2018-2021 Jolla Ltd.
+ * Copyright (C) 2018-2021 Slava Monich <slava@monich.com>
  *
  * You may use this file under the terms of BSD license as follows:
  *
@@ -64,6 +64,7 @@ TextField {
         onActiveChanged: {
             if (!Qt.application.active) {
                 _usePasswordEchoMode = true
+                if (!readOnly) text = "" // Reset whatever has been typed
             }
         }
     }
