@@ -57,7 +57,7 @@ bool HarbourProcessState::isJailedApp()
     // parent pids, if ppid check becomes not reliable enough.
     if (processJailed < 0) {
         if (getppid() == 1) {
-            HDEBUG("We are jailed!");
+            HWARN("We are jailed!");
             processJailed = 1;
         } else{
             HDEBUG("Cool, we are free!");
