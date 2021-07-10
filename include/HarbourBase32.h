@@ -1,6 +1,6 @@
 /*
- * Copyright (C) 2019 Jolla Ltd.
- * Copyright (C) 2019 Slava Monich <slava.monich@jolla.com>
+ * Copyright (C) 2019-2021 Jolla Ltd.
+ * Copyright (C) 2019-2021 Slava Monich <slava.monich@jolla.com>
  *
  * You may use this file under the terms of the BSD license as follows:
  *
@@ -31,8 +31,8 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef HARBOUR_IMAGE_BASE32_H
-#define HARBOUR_IMAGE_BASE32_H
+#ifndef HARBOUR_BASE32_H
+#define HARBOUR_BASE32_H
 
 #include <QString>
 #include <QByteArray>
@@ -46,4 +46,4 @@ public:
     static bool isValidBase32(QString aBase32);
 };
 
-#endif // HARBOUR_IMAGE_BASE32_H
+#endif // HARBOUR_BASE32_H
