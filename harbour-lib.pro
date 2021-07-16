@@ -31,6 +31,7 @@ SOURCES += \
     src/HarbourLib.cpp \
     src/HarbourMce.cpp \
     src/HarbourMediaPlugin.cpp \
+    src/HarbourObject.cpp \
     src/HarbourOrganizeListModel.cpp \
     src/HarbourPolicyPlugin.cpp \
     src/HarbourProcessState.cpp \
@@ -63,6 +64,7 @@ PUBLIC_HEADERS += \
     include/HarbourJson.h \
     include/HarbourLib.h \
     include/HarbourMediaPlugin.h \
+    include/HarbourObject.h \
     include/HarbourOrganizeListModel.h \
     include/HarbourPolicyPlugin.h \
     include/HarbourProcessState.h \
