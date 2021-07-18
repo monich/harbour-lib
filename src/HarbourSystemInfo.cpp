@@ -1,6 +1,6 @@
 /*
- * Copyright (C) 2020 Jolla Ltd.
- * Copyright (C) 2020 Slava Monich <slava@monich.com>
+ * Copyright (C) 2020-2021 Jolla Ltd.
+ * Copyright (C) 2020-2021 Slava Monich <slava@monich.com>
  *
  * You may use this file under the terms of the BSD license as follows:
  *
@@ -44,6 +44,11 @@
 #include <QFile>
 #include <QTextStream>
 
+#include <unistd.h>
+#include <errno.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+
 // ==========================================================================
 // HarbourSystemInfo::Private
 // ==========================================================================
@@ -63,10 +68,13 @@ public:
     static int compareVersions(const QVector<uint> aVersion1, const QVector<uint> aVersion2);
     static int compareVersions(const QVector<uint> aVersion1, const QString aVersion2);
 
+    QString getPackageVersion(QString aPackage);
+
 public:
     QString iName;
     QString iVersion;
     QVector<uint> iParsedVersion;
+    QMap<QString,QString> iPackageVersions;
 };
 
 const QString HarbourSystemInfo::Private::NAME("NAME");
@@ -159,6 +167,21 @@ inline int HarbourSystemInfo::Private::compareVersions(const QVector<uint> aVers
     return compareVersions(aVersion1, Private::parseVersion(aVersion2));
 }
 
+QString HarbourSystemInfo::Private::getPackageVersion(QString aPackage)
+{
+    QString version;
+    if (!aPackage.isEmpty()) {
+        version = iPackageVersions.value(aPackage);
+        if (version.isEmpty()) {
+            version = HarbourSystemInfo::queryPackageVersion(aPackage);
+            if (!version.isEmpty()) {
+                iPackageVersions.insert(aPackage, version);
+            }
+        }
+    }
+    return version;
+}
+
 // ==========================================================================
 // HarbourSystemInfo
 // ==========================================================================
@@ -192,6 +215,11 @@ QString HarbourSystemInfo::osVersion() const
     return iPrivate->iVersion;
 }
 
+QString HarbourSystemInfo::packageVersion(QString aPackage)
+{
+    return iPrivate->getPackageVersion(aPackage);
+}
+
 int HarbourSystemInfo::osVersionCompare(QString aVersion)
 {
     return Private::compareVersions(iPrivate->iParsedVersion, aVersion);
@@ -202,4 +230,53 @@ int HarbourSystemInfo::osVersionCompareWith(QString aVersion)
     const QStringList keys(Private::VERSION_ID);
     const QString os(Private::parseOsRelease(keys).value(Private::VERSION_ID));
     return Private::compareVersions(Private::parseVersion(os), aVersion);
+}
+
+int HarbourSystemInfo::compareVersions(QString aVersion1, QString aVersion2)
+{
+    return Private::compareVersions(Private::parseVersion(aVersion1),
+        Private::parseVersion(aVersion2));
+}
+
+QString HarbourSystemInfo::queryPackageVersion(QString aPackage)
+{
+    QString version;
+    int fds[2];
+    if (pipe(fds) == 0) {
+        pid_t pid = fork();
+        if (!pid) {
+            const QByteArray package(aPackage.toLatin1());
+            const char* argv[6];
+            argv[0] = "rpm";
+            argv[1] = "-q";
+            argv[2] = "--qf";
+            argv[3] = "%{version}";
+            argv[4] = package.constData();
+            argv[5] = NULL;
+            while ((dup2(fds[1], STDOUT_FILENO) == -1) && (errno == EINTR));
+            execvp(argv[0], (char**)argv);
+            exit(1);
+        }
+        close(fds[1]);
+
+        // There shouldn't be much output
+        QByteArray out;
+        const int chunk = 16;
+        ssize_t n = 0;
+        do {
+            const int size = out.size();
+            out.resize(size + chunk);
+            while ((n = read(fds[0], out.data() + size, chunk)) == -1 && (errno == EINTR));
+            out.resize(size + qMax(n, (ssize_t)0));
+        } while (n > 0);
+
+        // Parse the version
+        if (out.size() > 0) {
+            version = QString::fromLatin1(out);
+            HDEBUG(qPrintable(aPackage) << qPrintable(version));
+        }
+        waitpid(pid, NULL, 0);
+        close(fds[0]);
+    }
+    return version;
 }

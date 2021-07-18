@@ -1,6 +1,6 @@
 /*
- * Copyright (C) 2020 Jolla Ltd.
- * Copyright (C) 2020 Slava Monich <slava@monich.com>
+ * Copyright (C) 2020-2021 Jolla Ltd.
+ * Copyright (C) 2020-2021 Slava Monich <slava@monich.com>
  *
  * You may use this file under the terms of the BSD license as follows:
  *
@@ -61,7 +61,11 @@ public:
     QString osName() const;
     QString osVersion() const;
 
+    Q_INVOKABLE QString packageVersion(QString aPackage);
     Q_INVOKABLE int osVersionCompare(QString aVersion);
+    Q_INVOKABLE static int compareVersions(QString aVersion1, QString aVersion2);
+
+    static QString queryPackageVersion(QString aVersion);
     static int osVersionCompareWith(QString aVersion);
 
 private:
