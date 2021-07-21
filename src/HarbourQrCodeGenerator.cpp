@@ -1,6 +1,6 @@
 /*
- * Copyright (C) 2019 Jolla Ltd.
- * Copyright (C) 2019 Slava Monich <slava.monich@jolla.com>
+ * Copyright (C) 2019-2021 Jolla Ltd.
+ * Copyright (C) 2019-2021 Slava Monich <slava.monich@jolla.com>
  *
  * You may use this file under the terms of the BSD license as follows:
  *
@@ -11,8 +11,8 @@
  *   1. Redistributions of source code must retain the above copyright
  *      notice, this list of conditions and the following disclaimer.
  *   2. Redistributions in binary form must reproduce the above copyright
- *      notice, this list of conditions and the following disclaimer in
- *      the documentation and/or other materials provided with the
+ *      notice, this list of conditions and the following disclaimer
+ *      in the documentation and/or other materials provided with the
  *      distribution.
  *   3. Neither the names of the copyright holders nor the names of its
  *      contributors may be used to endorse or promote products derived
@@ -45,25 +45,31 @@
 // HarbourQrCodeGenerator::Task
 // ==========================================================================
 
-class HarbourQrCodeGenerator::Task : public HarbourTask {
+class HarbourQrCodeGenerator::Task : public HarbourTask
+{
     Q_OBJECT
+
 public:
-    Task(QThreadPool* aPool, QString aText);
+    Task(QThreadPool* aPool, QString aText, ECLevel aEcLevel);
     void performTask() Q_DECL_OVERRIDE;
+
 public:
     QString iText;
     QString iCode;
+    ECLevel iEcLevel;
 };
 
-HarbourQrCodeGenerator::Task::Task(QThreadPool* aPool, QString aText) :
+HarbourQrCodeGenerator::Task::Task(QThreadPool* aPool, QString aText,
+    ECLevel aEcLevel) :
     HarbourTask(aPool),
-    iText(aText)
+    iText(aText),
+    iEcLevel(aEcLevel)
 {
 }
 
 void HarbourQrCodeGenerator::Task::performTask()
 {
-    QByteArray bytes(generate(iText));
+    QByteArray bytes(generate(iText, iEcLevel));
     if (!bytes.isEmpty()) {
         iCode = HarbourBase32::toBase32(bytes);
     }
@@ -73,7 +79,8 @@ void HarbourQrCodeGenerator::Task::performTask()
 // HarbourQrCodeGenerator::Private
 // ==========================================================================
 
-class HarbourQrCodeGenerator::Private : public QObject {
+class HarbourQrCodeGenerator::Private : public QObject
+{
     Q_OBJECT
 
 public:
@@ -82,6 +89,10 @@ public:
 
     HarbourQrCodeGenerator* parentObject() const;
     void setText(QString aValue);
+    void setEcLevel(int aValue);
+    void regenerate();
+
+    static QRecLevel realEcLevel(ECLevel aEcLevel);
 
 public Q_SLOTS:
     void onTaskDone();
@@ -89,6 +100,7 @@ public Q_SLOTS:
 public:
     QThreadPool* iThreadPool;
     Task* iTask;
+    ECLevel iEcLevel;
     QString iText;
     QString iCode;
 };
@@ -96,7 +108,8 @@ public:
 HarbourQrCodeGenerator::Private::Private(HarbourQrCodeGenerator* aParent) :
     QObject(aParent),
     iThreadPool(new QThreadPool(this)),
-    iTask(Q_NULLPTR)
+    iTask(Q_NULLPTR),
+    iEcLevel(ECLevelDefault)
 {
     // Serialize the tasks:
     iThreadPool->setMaxThreadCount(1);
@@ -104,6 +117,7 @@ HarbourQrCodeGenerator::Private::Private(HarbourQrCodeGenerator* aParent) :
 
 HarbourQrCodeGenerator::Private::~Private()
 {
+    if (iTask) iTask->release();
     iThreadPool->waitForDone();
 }
 
@@ -112,19 +126,52 @@ inline HarbourQrCodeGenerator* HarbourQrCodeGenerator::Private::parentObject() c
     return qobject_cast<HarbourQrCodeGenerator*>(parent());
 }
 
+QRecLevel HarbourQrCodeGenerator::Private::realEcLevel(ECLevel aEcLevel)
+{
+    switch (aEcLevel) {
+    case ECLevel_L: return QR_ECLEVEL_L;
+    case ECLevel_M: return QR_ECLEVEL_M;
+    case ECLevel_Q: return QR_ECLEVEL_Q;
+    case ECLevel_H: return QR_ECLEVEL_H;
+    case ECLevelDefault:
+    case ECLevelCount:
+        break;
+    }
+    return QR_ECLEVEL_M; // default
+}
+
 void HarbourQrCodeGenerator::Private::setText(QString aText)
 {
     if (iText != aText) {
         iText = aText;
-        HarbourQrCodeGenerator* obj = parentObject();
-        const bool wasRunning = (iTask != Q_NULLPTR);
-        if (iTask) iTask->release(this);
-        iTask = new Task(iThreadPool, aText);
-        iTask->submit(this, SLOT(onTaskDone()));
-        Q_EMIT obj->textChanged();
-        if (!wasRunning) {
-            Q_EMIT obj->runningChanged();
+        regenerate();
+        Q_EMIT parentObject()->textChanged();
+    }
+}
+
+void HarbourQrCodeGenerator::Private::setEcLevel(int aValue)
+{
+    const ECLevel level = (aValue < ECLevelDefault) ? ECLevelDefault :
+        (aValue > ECLevelHighest) ? ECLevelHighest : (ECLevel)aValue;
+    if (iEcLevel != level) {
+        const QRecLevel prevRealLevel = realEcLevel(iEcLevel);
+        iEcLevel = level;
+        if (realEcLevel(level) != prevRealLevel) {
+            regenerate();
         }
+        Q_EMIT parentObject()->ecLevelChanged();
+    }
+}
+
+void HarbourQrCodeGenerator::Private::regenerate()
+{
+    HarbourQrCodeGenerator* obj = parentObject();
+    const bool wasRunning = (iTask != Q_NULLPTR);
+    if (iTask) iTask->release();
+    iTask = new Task(iThreadPool, iText, iEcLevel);
+    iTask->submit(this, SLOT(onTaskDone()));
+    if (!wasRunning) {
+        Q_EMIT obj->runningChanged();
     }
 }
 
@@ -156,7 +203,7 @@ HarbourQrCodeGenerator::HarbourQrCodeGenerator(QObject* aParent) :
 // Callback for qmlRegisterSingletonType<HarbourQrCodeGenerator>
 QObject* HarbourQrCodeGenerator::createSingleton(QQmlEngine* aEngine, QJSEngine*)
 {
-    return new HarbourQrCodeGenerator(aEngine);
+    return new HarbourQrCodeGenerator(); // Singleton doesn't need a parent
 }
 
 QString HarbourQrCodeGenerator::text() const
@@ -169,6 +216,16 @@ void HarbourQrCodeGenerator::setText(QString aValue)
     iPrivate->setText(aValue);
 }
 
+HarbourQrCodeGenerator::ECLevel HarbourQrCodeGenerator::ecLevel() const
+{
+    return iPrivate->iEcLevel;
+}
+
+void HarbourQrCodeGenerator::setEcLevel(int aValue)
+{
+    iPrivate->setEcLevel(aValue);
+}
+
 QString HarbourQrCodeGenerator::code() const
 {
     return iPrivate->iCode;
@@ -179,10 +236,11 @@ bool HarbourQrCodeGenerator::running() const
     return iPrivate->iTask != Q_NULLPTR;
 }
 
-QByteArray HarbourQrCodeGenerator::generate(QString aText)
+QByteArray HarbourQrCodeGenerator::generate(QString aText, ECLevel aEcLevel)
 {
     QByteArray in(aText.toUtf8()), out;
-    QRcode* code = QRcode_encodeString(in.constData(), 0, QR_ECLEVEL_M, QR_MODE_8, true);
+    QRcode* code = QRcode_encodeString(in.constData(), 0,
+        Private::realEcLevel(aEcLevel), QR_MODE_8, true);
     if (code) {
         const int bytesPerRow = (code->width + 7) / 8;
         if (bytesPerRow > 0) {

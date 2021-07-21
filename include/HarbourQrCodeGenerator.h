@@ -1,6 +1,6 @@
 /*
- * Copyright (C) 2019 Jolla Ltd.
- * Copyright (C) 2019 Slava Monich <slava.monich@jolla.com>
+ * Copyright (C) 2019-2021 Jolla Ltd.
+ * Copyright (C) 2019-2021 Slava Monich <slava.monich@jolla.com>
  *
  * You may use this file under the terms of the BSD license as follows:
  *
@@ -39,26 +39,43 @@
 class HarbourQrCodeGenerator : public QObject {
     Q_OBJECT
     Q_PROPERTY(QString text READ text WRITE setText NOTIFY textChanged)
+    Q_PROPERTY(int ecLevel READ ecLevel WRITE setEcLevel NOTIFY ecLevelChanged)
     Q_PROPERTY(QString code READ code NOTIFY codeChanged)
     Q_PROPERTY(QString qrcode READ code NOTIFY codeChanged)
     Q_PROPERTY(bool running READ running NOTIFY runningChanged)
+    Q_ENUMS(ECLevel)
 
 public:
+    enum ECLevel {
+        ECLevelDefault = -1,
+        ECLevelLowest = 0,
+        ECLevel_L = ECLevelLowest,
+        ECLevel_M,
+        ECLevel_Q,
+        ECLevel_H,
+        ECLevelHighest = ECLevel_H,
+        ECLevelCount
+    };
+
     HarbourQrCodeGenerator(QObject* aParent = Q_NULLPTR);
 
     QString text() const;
     void setText(QString aValue);
 
+    ECLevel ecLevel() const;
+    void setEcLevel(int aValue);
+
     QString code() const;
     bool running() const;
 
-    static QByteArray generate(QString aText);
+    static QByteArray generate(QString aText, ECLevel aEcLevel = ECLevelDefault);
 
     // Callback for qmlRegisterSingletonType<HarbourQrCodeGenerator>
     static QObject* createSingleton(QQmlEngine* aEngine, QJSEngine* aScript);
 
 Q_SIGNALS:
     void textChanged();
+    void ecLevelChanged();
     void codeChanged();
     void runningChanged();
 
