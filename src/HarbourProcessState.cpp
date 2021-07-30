@@ -56,12 +56,19 @@ bool HarbourProcessState::isJailedApp()
     // We could additionally check that /proc contains only our and
     // parent pids, if ppid check becomes not reliable enough.
     if (processJailed < 0) {
-        if (getppid() == 1) {
-            HWARN("We are jailed!");
-            processJailed = 1;
-        } else{
-            HDEBUG("Cool, we are free!");
-            processJailed = 0;
+        bool simulate = false;
+        const char* var = "HARBOUR_JAIL_STATE";
+        processJailed = QString(qgetenv(var)).toInt(&simulate);
+        if (!simulate || processJailed < 0) {
+            if (getppid() == 1) {
+                HWARN("We are jailed!");
+                processJailed = 1;
+            } else{
+                HDEBUG("Cool, we are free!");
+                processJailed = 0;
+            }
+        } else {
+            HWARN(var << processJailed);
         }
     }
     return processJailed > 0;
