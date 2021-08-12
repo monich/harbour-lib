@@ -1,6 +1,6 @@
 /*
- * Copyright (C) 2019 Jolla Ltd.
- * Copyright (C) 2019 Slava Monich <slava.monich@jolla.com>
+ * Copyright (C) 2019-2021 Jolla Ltd.
+ * Copyright (C) 2019-2021 Slava Monich <slava.monich@jolla.com>
  *
  * You may use this file under the terms of the BSD license as follows:
  *
@@ -11,8 +11,8 @@
  *   1. Redistributions of source code must retain the above copyright
  *      notice, this list of conditions and the following disclaimer.
  *   2. Redistributions in binary form must reproduce the above copyright
- *      notice, this list of conditions and the following disclaimer in
- *      the documentation and/or other materials provided with the
+ *      notice, this list of conditions and the following disclaimer
+ *      in the documentation and/or other materials provided with the
  *      distribution.
  *   3. Neither the names of the copyright holders nor the names of its
  *      contributors may be used to endorse or promote products derived
@@ -48,22 +48,25 @@
 class HarbourAztecCodeGenerator::Task : public HarbourTask {
     Q_OBJECT
 public:
-    Task(QThreadPool* aPool, QString aText);
+    Task(QThreadPool* aPool, QString aText, int aEcLevel);
     void performTask() Q_DECL_OVERRIDE;
 public:
     QString iText;
     QString iCode;
+    int iEcLevel;
 };
 
-HarbourAztecCodeGenerator::Task::Task(QThreadPool* aPool, QString aText) :
+HarbourAztecCodeGenerator::Task::Task(QThreadPool* aPool, QString aText,
+    int aEcLevel) :
     HarbourTask(aPool),
-    iText(aText)
+    iText(aText),
+    iEcLevel(aEcLevel)
 {
 }
 
 void HarbourAztecCodeGenerator::Task::performTask()
 {
-    QByteArray bytes(generate(iText));
+    QByteArray bytes(generate(iText, iEcLevel));
     if (!bytes.isEmpty()) {
         iCode = HarbourBase32::toBase32(bytes);
     }
@@ -82,6 +85,10 @@ public:
 
     HarbourAztecCodeGenerator* parentObject() const;
     void setText(QString aValue);
+    void setEcLevel(int aValue);
+    void regenerate();
+
+    static int realEcLevel(int aEcLevel);
 
 public Q_SLOTS:
     void onTaskDone();
@@ -89,6 +96,7 @@ public Q_SLOTS:
 public:
     QThreadPool* iThreadPool;
     Task* iTask;
+    int iEcLevel;
     QString iText;
     QString iCode;
 };
@@ -96,7 +104,8 @@ public:
 HarbourAztecCodeGenerator::Private::Private(HarbourAztecCodeGenerator* aParent) :
     QObject(aParent),
     iThreadPool(new QThreadPool(this)),
-    iTask(Q_NULLPTR)
+    iTask(Q_NULLPTR),
+    iEcLevel(ECLevelDefault)
 {
     // Serialize the tasks:
     iThreadPool->setMaxThreadCount(1);
@@ -112,19 +121,45 @@ inline HarbourAztecCodeGenerator* HarbourAztecCodeGenerator::Private::parentObje
     return qobject_cast<HarbourAztecCodeGenerator*>(parent());
 }
 
+int HarbourAztecCodeGenerator::Private::realEcLevel(int aEcLevel)
+{
+    return (aEcLevel == ECLevelDefault) ? AZTEC_CORRECTION_DEFAULT :
+        (aEcLevel < ECLevelLowest) ?  ECLevelLowest :
+        (aEcLevel > ECLevelHighest) ?  ECLevelHighest :
+        aEcLevel;
+}
+
 void HarbourAztecCodeGenerator::Private::setText(QString aText)
 {
     if (iText != aText) {
         iText = aText;
-        HarbourAztecCodeGenerator* obj = parentObject();
-        const bool wasRunning = (iTask != Q_NULLPTR);
-        if (iTask) iTask->release(this);
-        iTask = new Task(iThreadPool, aText);
-        iTask->submit(this, SLOT(onTaskDone()));
-        Q_EMIT obj->textChanged();
-        if (!wasRunning) {
-            Q_EMIT obj->runningChanged();
+        regenerate();
+        Q_EMIT parentObject()->textChanged();
+    }
+}
+
+void HarbourAztecCodeGenerator::Private::setEcLevel(int aValue)
+{
+    const int level = (aValue == ECLevelDefault) ? ECLevelDefault : realEcLevel(aValue);
+    if (iEcLevel != level) {
+        const int prevRealLevel = realEcLevel(iEcLevel);
+        iEcLevel = level;
+        HDEBUG(level);
+        if (realEcLevel(level) != prevRealLevel) {
+            regenerate();
         }
+        Q_EMIT parentObject()->ecLevelChanged();
+    }
+}
+
+void HarbourAztecCodeGenerator::Private::regenerate()
+{
+    const bool wasRunning = (iTask != Q_NULLPTR);
+    if (iTask) iTask->release(this);
+    iTask = new Task(iThreadPool, iText, iEcLevel);
+    iTask->submit(this, SLOT(onTaskDone()));
+    if (!wasRunning) {
+        Q_EMIT parentObject()->runningChanged();
     }
 }
 
@@ -169,6 +204,16 @@ void HarbourAztecCodeGenerator::setText(QString aValue)
     iPrivate->setText(aValue);
 }
 
+int HarbourAztecCodeGenerator::ecLevel() const
+{
+    return iPrivate->iEcLevel;
+}
+
+void HarbourAztecCodeGenerator::setEcLevel(int aValue)
+{
+    iPrivate->setEcLevel(aValue);
+}
+
 QString HarbourAztecCodeGenerator::code() const
 {
     return iPrivate->iCode;
@@ -179,12 +224,12 @@ bool HarbourAztecCodeGenerator::running() const
     return iPrivate->iTask != Q_NULLPTR;
 }
 
-QByteArray HarbourAztecCodeGenerator::generate(QString aText)
+QByteArray HarbourAztecCodeGenerator::generate(QString aText, int aEcLevel)
 {
     HDEBUG(aText);
     QByteArray in(aText.toUtf8()), out;
     AztecSymbol* aztec = aztec_encode_inv(in.constData(), in.size(),
-        AZTEC_CORRECTION_DEFAULT);
+        Private::realEcLevel(aEcLevel));
     if (aztec) {
         const int bytesPerRow = (aztec->size + 7) / 8;
         out.reserve(bytesPerRow * aztec->size);

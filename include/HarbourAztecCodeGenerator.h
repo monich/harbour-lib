@@ -1,6 +1,6 @@
 /*
- * Copyright (C) 2019 Jolla Ltd.
- * Copyright (C) 2019 Slava Monich <slava.monich@jolla.com>
+ * Copyright (C) 2019-2021 Jolla Ltd.
+ * Copyright (C) 2019-2021 Slava Monich <slava.monich@jolla.com>
  *
  * You may use this file under the terms of the BSD license as follows:
  *
@@ -11,8 +11,8 @@
  *   1. Redistributions of source code must retain the above copyright
  *      notice, this list of conditions and the following disclaimer.
  *   2. Redistributions in binary form must reproduce the above copyright
- *      notice, this list of conditions and the following disclaimer in
- *      the documentation and/or other materials provided with the
+ *      notice, this list of conditions and the following disclaimer
+ *      in the documentation and/or other materials provided with the
  *      distribution.
  *   3. Neither the names of the copyright holders nor the names of its
  *      contributors may be used to endorse or promote products derived
@@ -39,25 +39,42 @@
 class HarbourAztecCodeGenerator : public QObject {
     Q_OBJECT
     Q_PROPERTY(QString text READ text WRITE setText NOTIFY textChanged)
+    Q_PROPERTY(int ecLevel READ ecLevel WRITE setEcLevel NOTIFY ecLevelChanged)
     Q_PROPERTY(QString code READ code NOTIFY codeChanged)
     Q_PROPERTY(bool running READ running NOTIFY runningChanged)
+    Q_ENUMS(ECLevel)
 
 public:
+    enum ECLevel {
+        ECLevelDefault = -1,
+        ECLevelLowest = 5,
+        ECLevelLow = 10,
+        ECLevelMedium = 23,
+        ECLevelHigh = 36,
+        ECLevelVeryHigh = 50,
+        ECLevelHighest = 95,
+        ECLevelCount
+    };
+
     HarbourAztecCodeGenerator(QObject* aParent = Q_NULLPTR);
 
     QString text() const;
     void setText(QString aValue);
 
+    int ecLevel() const;
+    void setEcLevel(int aValue);
+
     QString code() const;
     bool running() const;
 
-    static QByteArray generate(QString aText);
+    static QByteArray generate(QString aText, int aEcLevel = ECLevelDefault);
 
     // Callback for qmlRegisterSingletonType<HarbourAztecCodeGenerator>
     static QObject* createSingleton(QQmlEngine* aEngine, QJSEngine* aScript);
 
 Q_SIGNALS:
     void textChanged();
+    void ecLevelChanged();
     void codeChanged();
     void runningChanged();
 
