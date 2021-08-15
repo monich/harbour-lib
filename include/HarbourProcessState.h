@@ -44,6 +44,7 @@ class HarbourProcessState: public QObject
     Q_OBJECT
     Q_DISABLE_COPY(HarbourProcessState)
     Q_PROPERTY(bool jailedApp READ isJailedApp CONSTANT)
+    Q_PROPERTY(bool provileged READ isPrivileged CONSTANT)
 
 public:
     explicit HarbourProcessState(QObject* aParent = Q_NULLPTR);
@@ -52,6 +53,7 @@ public:
     static QObject* createSingleton(QQmlEngine* aEngine, QJSEngine* aScript);
 
     static bool isJailedApp();
+    static bool isPrivileged();
 };
 
 #endif // HARBOUR_PROCESS_STATE_H

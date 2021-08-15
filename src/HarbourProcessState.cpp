@@ -35,6 +35,8 @@
 #include "HarbourDebug.h"
 
 #include <unistd.h>
+#include <grp.h>
+#include <sys/types.h>
 
 HarbourProcessState::HarbourProcessState(QObject* aParent) :
     QObject(aParent)
@@ -72,4 +74,26 @@ bool HarbourProcessState::isJailedApp()
         }
     }
     return processJailed > 0;
+}
+
+bool HarbourProcessState::isPrivileged()
+{
+    static gid_t privilegedGid = 0;
+
+    if (!privilegedGid) {
+        const struct group* gr = getgrnam("privileged");
+
+        if (gr) {
+            privilegedGid = gr->gr_gid;
+            HDEBUG("privileged =" << privilegedGid);
+        }
+    }
+    const gid_t egid = getegid();
+    if (egid == privilegedGid) {
+        HDEBUG("Yes, we are privileged :)");
+        return true;
+    } else {
+        HDEBUG("Oops, we are not privileged :(");
+        return false;
+    }
 }
