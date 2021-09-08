@@ -1,6 +1,6 @@
 /*
- * Copyright (C) 2017-2020 Jolla Ltd.
- * Copyright (C) 2017-2020 Slava Monich <slava.monich@jolla.com>
+ * Copyright (C) 2017-2021 Jolla Ltd.
+ * Copyright (C) 2017-2021 Slava Monich <slava.monich@jolla.com>
  *
  * You may use this file under the terms of the BSD license as follows:
  *
@@ -78,6 +78,24 @@
 
 // sym,ret,name,args
 #define QMLTYPE_FUNCTIONS(f) \
+    f("_ZN12QQmlMetaType7qmlTypeERK7QStringii", \
+        QQmlType*, qmlType, (QString const&, int, int)) \
+    f("_ZNK8QQmlType23propertyValueSourceCastEv", \
+        int, propertyValueSourceCast, (QQmlType*)) \
+    f("_ZNK8QQmlType10createSizeEv", \
+        int, createSize, (QQmlType*)) \
+    f("_ZNK8QQmlType10metaObjectEv", \
+        const QMetaObject*, metaObject, (QQmlType*)) \
+    f("_ZNK8QQmlType16parserStatusCastEv", \
+        int, parserStatusCast, (QQmlType*)) \
+    f("_ZNK8QQmlType28propertyValueInterceptorCastEv", \
+        int, propertyValueInterceptorCast, (QQmlType*)) \
+    f("_ZNK8QQmlType6typeIdEv", \
+        int, typeId, (QQmlType*)) \
+    f("_ZNK8QQmlType14createFunctionEv", \
+        QQmlType::CreateFunc, createFunction, (QQmlType*)) \
+    f("_ZNK8QQmlType11qListTypeIdEv", \
+        int, qListTypeId, (QQmlType*)) \
     f("_ZNK8QQmlType26attachedPropertiesFunctionEv", \
         QQmlAttachedPropertiesFunc, AttachedPropertiesFunctionProc,(QQmlType*)) \
     f("_ZNK8QQmlType22attachedPropertiesTypeEv", \
@@ -100,8 +118,8 @@ public:
     int parserStatusCast() const;
     int propertyValueSourceCast() const;
     int propertyValueInterceptorCast() const;
-    QQmlAttachedPropertiesFunc attachedPropertiesFunction(QQmlEnginePrivate *engine) const;
-    const QMetaObject *attachedPropertiesType(QQmlEnginePrivate *engine) const;
+    // attachedPropertiesFunction
+    // attachedPropertiesType
 };
 
 // PRIVATE QT API!
@@ -219,8 +237,10 @@ QQmlType*
 HarbourPluginLoader::Private::qmlType(
     QString aName)
 {
-    QString fullName(iModule + '/' + aName);
-    QQmlType* type = QQmlMetaType::qmlType(fullName, iMajor, iMinor);
+    const QString fullName(iModule + '/' + aName);
+    QQmlType* type = gLibQt5Qml.iSym.fn.qmlType ?
+        gLibQt5Qml.iSym.fn.qmlType(fullName, iMajor, iMinor) :
+        Q_NULLPTR;
     if (!type) {
         HWARN("Failed to load" << fullName);
     }
@@ -259,7 +279,15 @@ HarbourPluginLoader::Private::reRegisterType(
     int aMajor,
     int aMinor)
 {
-    if (aType && iEngine) {
+    if (aType && iEngine &&
+        gLibQt5Qml.iSym.fn.typeId &&
+        gLibQt5Qml.iSym.fn.qListTypeId &&
+        gLibQt5Qml.iSym.fn.createSize &&
+        gLibQt5Qml.iSym.fn.createFunction &&
+        gLibQt5Qml.iSym.fn.metaObject &&
+        gLibQt5Qml.iSym.fn.parserStatusCast &&
+        gLibQt5Qml.iSym.fn.propertyValueSourceCast &&
+        gLibQt5Qml.iSym.fn.propertyValueInterceptorCast) {
         // Get around the ABI break in Qt 5.6
         QQmlAttachedPropertiesFunc attachedPropertiesFunction =
             gLibQt5Qml.iSym.fn.AttachedPropertiesFunctionProc ?
@@ -275,21 +303,21 @@ HarbourPluginLoader::Private::reRegisterType(
             NULL;
         QQmlPrivate::RegisterType type = {
             0, // int version;
-            aType->typeId(),  // int typeId;
-            aType->qListTypeId(), // int listId;
-            aType->createSize(), // int objectSize;
-            aType->createFunction(), // void (*create)(void *);
+            gLibQt5Qml.iSym.fn.typeId(aType),  // int typeId;
+            gLibQt5Qml.iSym.fn.qListTypeId(aType), // int listId;
+            gLibQt5Qml.iSym.fn.createSize(aType), // int objectSize;
+            gLibQt5Qml.iSym.fn.createFunction(aType), // void (*create)(void *);
             QString(), // QString noCreationReason;
             aModule, // const char *uri;
             aMajor, // int versionMajor;
             aMinor, // int versionMinor;
             aQmlName, // const char *elementName;
-            aType->metaObject(), // const QMetaObject *metaObject;
+            gLibQt5Qml.iSym.fn.metaObject(aType), // const QMetaObject *metaObject;
             attachedPropertiesFunction,
             attachedPropertiesMetaObject,
-            aType->parserStatusCast(), // int parserStatusCast;
-            aType->propertyValueSourceCast(), // int valueSourceCast;
-            aType->propertyValueInterceptorCast(), // int valueInterceptorCast;
+            gLibQt5Qml.iSym.fn.parserStatusCast(aType), // int parserStatusCast;
+            gLibQt5Qml.iSym.fn.propertyValueSourceCast(aType), // int valueSourceCast;
+            gLibQt5Qml.iSym.fn.propertyValueInterceptorCast(aType), // int valueInterceptorCast;
             Q_NULLPTR, // QObject *(*extensionObjectCreate)(QObject *);
             Q_NULLPTR, // const QMetaObject *extensionMetaObject;
             Q_NULLPTR, // QQmlCustomParser *customParser;
