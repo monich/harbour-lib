@@ -26,6 +26,7 @@ SOURCES += \
     src/HarbourBase32.cpp \
     src/HarbourBase45.cpp \
     src/HarbourClipboard.cpp \
+    src/HarbourColorEditorModel.cpp \
     src/HarbourDisplayBlanking.cpp \
     src/HarbourJson.cpp \
     src/HarbourLib.cpp \
@@ -59,6 +60,7 @@ PUBLIC_HEADERS += \
     include/HarbourBase32.h \
     include/HarbourBase45.h \
     include/HarbourClipboard.h \
+    include/HarbourColorEditorModel.h \
     include/HarbourDebug.h \
     include/HarbourDisplayBlanking.h \
     include/HarbourJson.h \
