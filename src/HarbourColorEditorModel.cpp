@@ -145,8 +145,8 @@ QVariant HarbourColorEditorModel::Private::data(int aRow, ModelRole aRole) const
 // HarbourColorEditorModel::Private
 // ==========================================================================
 
-HarbourColorEditorModel::HarbourColorEditorModel(QObject* parent) :
-    QAbstractListModel(parent),
+HarbourColorEditorModel::HarbourColorEditorModel(QObject* aParent) :
+    QAbstractListModel(aParent),
     iPrivate(new Private)
 {
 }
@@ -224,12 +224,12 @@ void HarbourColorEditorModel::setColors(QStringList aColors)
     }
 }
 
-void HarbourColorEditorModel::addColor(QColor color)
+void HarbourColorEditorModel::addColor(QColor aColor)
 {
-    if (color.isValid()) {
+    if (aColor.isValid()) {
         const int n = iPrivate->iColors.count();
         beginInsertRows(QModelIndex(), n, n);
-        iPrivate->iColors.append(color);
+        iPrivate->iColors.append(aColor);
         endInsertRows();
         Q_EMIT colorsChanged();
     }
@@ -290,4 +290,9 @@ void HarbourColorEditorModel::setDragPos(int aPos)
             }
         }
     }
+}
+
+int HarbourColorEditorModel::indexOf(QColor aColor) const
+{
+    return iPrivate->iColors.indexOf(aColor);
 }

@@ -52,20 +52,21 @@ public:
         AddItem
     };
 
-    HarbourColorEditorModel(QObject* parent = Q_NULLPTR);
+    HarbourColorEditorModel(QObject* aParent = Q_NULLPTR);
 
     QStringList getColors() const;
-    void setColors(QStringList colors);
+    void setColors(QStringList aColors);
 
     int getDragPos() const;
     void setDragPos(int pos);
 
-    Q_INVOKABLE void addColor(QColor color);
+    Q_INVOKABLE void addColor(QColor aColor);
+    Q_INVOKABLE int indexOf(QColor aColor) const;
 
     // QAbstractListModel
     QHash<int,QByteArray> roleNames() const Q_DECL_OVERRIDE;
-    int rowCount(const QModelIndex& parent) const Q_DECL_OVERRIDE;
-    QVariant data(const QModelIndex& index, int role) const Q_DECL_OVERRIDE;
+    int rowCount(const QModelIndex& aParent) const Q_DECL_OVERRIDE;
+    QVariant data(const QModelIndex& aIndex, int aRole) const Q_DECL_OVERRIDE;
 
 Q_SIGNALS:
     void colorsChanged();

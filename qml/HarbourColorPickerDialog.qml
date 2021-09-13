@@ -241,7 +241,8 @@ Dialog {
                     }
                     anchors.fill: parent
                     color: "transparent"
-                    visible: model.color === thisDialog.color
+                    visible: model.color === thisDialog.color &&
+                        model.index === colorModel.indexOf(thisDialog.color)
                 }
             }
 
