@@ -38,7 +38,7 @@ Dialog {
     id: thisDialog
 
     readonly property color selectedColor: sampleItem.color
-    property color initialColor
+    property color initialColor: Theme.highlightColor
     property string acceptText: "Add color"
     property alias hueSliderText: hueSlider.label // "Color"
     property alias brightnessSliderText: brightnessSlider.label // "Brightness"
@@ -54,6 +54,8 @@ Dialog {
         acceptText: forwardNavigation ?
             (thisDialog.acceptText ? thisDialog.acceptText : defaultAcceptText) : ""
     }
+
+    Component.onCompleted: hexText.text = initialColor.toString().substr(1)
 
     // Otherwise width is changing with a delay, causing visible layout changes
     onIsLandscapeChanged: width = isLandscape ? Screen.height : Screen.width
@@ -156,7 +158,6 @@ Dialog {
                             textLeftMargin: 0
                             textRightMargin: 0
                             label: hexNotationText
-                            text: initialColor.toString().substr(1)
                             validator: RegExpValidator { regExp: /^[0-9a-fA-F]{6}$/ }
                             inputMethodHints: Qt.ImhNoPredictiveText | Qt.ImhNoAutoUppercase
                             EnterKey.iconSource: "image://theme/icon-m-enter-close"
