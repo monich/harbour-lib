@@ -44,7 +44,7 @@ class HarbourProcessState: public QObject
     Q_OBJECT
     Q_DISABLE_COPY(HarbourProcessState)
     Q_PROPERTY(bool jailedApp READ isJailedApp CONSTANT)
-    Q_PROPERTY(bool provileged READ isPrivileged CONSTANT)
+    Q_PROPERTY(bool privileged READ isPrivileged CONSTANT)
 
 public:
     explicit HarbourProcessState(QObject* aParent = Q_NULLPTR);
