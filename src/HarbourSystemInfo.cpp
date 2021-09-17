@@ -44,6 +44,7 @@
 #include <QFile>
 #include <QTextStream>
 
+#include <stdlib.h>
 #include <unistd.h>
 #include <errno.h>
 #include <sys/types.h>
@@ -255,7 +256,7 @@ QString HarbourSystemInfo::queryPackageVersion(QString aPackage)
             argv[5] = NULL;
             while ((dup2(fds[1], STDOUT_FILENO) == -1) && (errno == EINTR));
             execvp(argv[0], (char**)argv);
-            exit(1);
+            abort();
         }
         close(fds[1]);
 
