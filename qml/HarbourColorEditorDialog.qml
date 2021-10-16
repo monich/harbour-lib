@@ -164,18 +164,25 @@ Dialog {
                             EnterKey.onClicked: hexText.focus = false
 
                             onTextChanged: {
-                                if (!ignoreTextUpdates && acceptableInput) {
-                                    tmpColor = "#" + text
-                                    ignoreTextUpdates++
-                                    brightnessSlider.value = hueItem.getV(tmpColor)
-                                    hueSlider.value = hueItem.getH(tmpColor)
-                                    ignoreTextUpdates--
+                                if (!ignoreTextUpdates) {
+                                    // acceptableInput hasn't been updated yet
+                                    syncTimer.restart()
                                 }
                             }
 
                             onActiveFocusChanged: {
                                 if (!activeFocus && !acceptableInput) {
                                     updateText()
+                                }
+                            }
+
+                            function syncColor() {
+                                if (acceptableInput) {
+                                    tmpColor = "#" + text
+                                    ignoreTextUpdates++
+                                    brightnessSlider.value = hueItem.getV(tmpColor)
+                                    hueSlider.value = hueItem.getH(tmpColor)
+                                    ignoreTextUpdates--
                                 }
                             }
 
@@ -186,6 +193,13 @@ Dialog {
                                     text = (s.length > 0 && s.charAt(0) === '#') ? s.substr(1) : s
                                     ignoreTextUpdates--
                                 }
+                            }
+
+                            Timer {
+                                id: syncTimer
+
+                                interval: 0
+                                onTriggered: hexText.syncColor()
                             }
                         }
                     }
@@ -198,6 +212,7 @@ Dialog {
                     width: 2 * height
                     height: hexText.height - 2 * Theme.paddingLarge
                     anchors.right: parent.right
+                    visible: hexText.acceptableInput
 
                     onClicked: thisDialog.accept()
 
@@ -206,7 +221,6 @@ Dialog {
 
                         anchors.fill: parent
                         color: "#" + hexText.text
-                        visible: hexText.acceptableInput
                         layer.enabled: sample.pressed && sample.containsMouse
                         layer.effect: HarbourPressEffect { source: sampleItem }
                     }
