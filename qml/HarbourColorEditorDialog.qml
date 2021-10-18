@@ -219,6 +219,7 @@ Dialog {
                     Rectangle {
                         id: sampleItem
 
+                        radius: Theme.paddingSmall
                         anchors.fill: parent
                         color: "#" + hexText.text
                         layer.enabled: sample.pressed && sample.containsMouse
