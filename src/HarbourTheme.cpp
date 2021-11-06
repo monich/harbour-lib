@@ -1,6 +1,6 @@
 /*
- * Copyright (C) 2018-2020 Jolla Ltd.
- * Copyright (C) 2018-2020 Slava Monich <slava@monich.com>
+ * Copyright (C) 2018-2021 Jolla Ltd.
+ * Copyright (C) 2018-2021 Slava Monich <slava@monich.com>
  *
  * You may use this file under the terms of the BSD license as follows:
  *
@@ -215,11 +215,15 @@ QColor HarbourTheme::invertedPrimaryColor() const
     return invertedColor(Private::primaryColor());
 }
 
+QRgb HarbourTheme::invertedRgb(QRgb aRgb)
+{
+    return ((~(aRgb & RGB_MASK)) & RGB_MASK) | (aRgb & (~RGB_MASK));
+}
+
 QColor HarbourTheme::invertedColor(const QColor& aColor)
 {
     if (aColor.isValid()) {
-        const QRgb rgba = aColor.rgba();
-        return QColor(((~(rgba & RGB_MASK)) & RGB_MASK) | (rgba & (~RGB_MASK)));
+        return QColor(invertedRgb(aColor.rgba()));
     } else {
         return aColor;
     }

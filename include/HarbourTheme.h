@@ -1,6 +1,6 @@
 /*
- * Copyright (C) 2018-2020 Jolla Ltd.
- * Copyright (C) 2018-2020 Slava Monich <slava@monich.com>
+ * Copyright (C) 2018-2021 Jolla Ltd.
+ * Copyright (C) 2018-2021 Slava Monich <slava@monich.com>
  *
  * You may use this file under the terms of the BSD license as follows:
  *
@@ -80,6 +80,8 @@ public:
     qreal opacityLow() const;
     qreal opacityHigh() const;
     qreal opacityOverlay() const;
+
+    static QRgb invertedRgb(QRgb aRgb);
 
     Q_INVOKABLE static QColor invertedColor(const QColor& aColor);
     Q_INVOKABLE static qreal colorDifference(const QColor& aColor1, const QColor& aColor2);
