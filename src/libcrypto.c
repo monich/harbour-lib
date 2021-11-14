@@ -125,8 +125,7 @@
     f(int, MD5_Init, (MD5_CTX* c), (c), 0) \
     f(int, MD5_Update, (MD5_CTX* c, const void* data, size_t len), \
      (c, data, len), 0) \
-    f(int, OPENSSL_init_crypto, \
-     (uint64_t opts, const OPENSSL_INIT_SETTINGS* settings), \
+    f(int, OPENSSL_init_crypto, (uint64_t opts, void* settings), \
      (opts, settings), 0) \
     f(int, RAND_bytes, (unsigned char* buf, int num), (buf, num), 0) \
     f(int, RAND_poll, (void), (), 0) \
