@@ -34,6 +34,7 @@
 #include "gutil_log.h"
 
 #include <dlfcn.h>
+#include <stdint.h>
 
 #include <openssl/aes.h>
 #include <openssl/des.h>
