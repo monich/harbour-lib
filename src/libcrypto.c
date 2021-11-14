@@ -75,6 +75,29 @@
 #  endif
 #endif
 
+/*
+ * OpenSSL 1.0 headers define ERR_load_crypto_strings as a function:
+ *
+ * void ERR_load_crypto_strings(void);
+ *
+ * and OpenSSL 1.1 as a macro:
+ *
+ * #if OPENSSL_API_COMPAT < 0x10100000L
+ * # define ERR_load_crypto_strings() \
+ *    OPENSSL_init_crypto(OPENSSL_INIT_LOAD_CRYPTO_STRINGS, NULL)
+ * # define ERR_free_strings() while(0) continue
+ * #endif
+ *
+ * We want to try loading both ERR_load_crypto_strings and
+ * OPENSSL_init_crypto, one of which will probably fail.
+ */
+
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L
+#  undef ERR_load_crypto_strings
+#else
+#  define OPENSSL_INIT_SETTINGS void
+#endif
+
 /* f(name,params,args) */
 #define LIBCRYPTO_FUNCTIONS1(f) \
     f(AES_cbc_encrypt, \
@@ -95,6 +118,7 @@
       DES_key_schedule* ks1, DES_key_schedule* ks2, DES_key_schedule* ks3, \
       DES_cblock* ivec, int enc), \
      (input, output, length, ks1, ks2, ks3, ivec, enc)) \
+    f(ERR_load_crypto_strings, (void), ()) \
     f(RSA_free, (RSA* r), (r))
 
 /* f(ret,name,params,args,def) */
@@ -125,7 +149,8 @@
     f(int, MD5_Init, (MD5_CTX* c), (c), 0) \
     f(int, MD5_Update, (MD5_CTX* c, const void* data, size_t len), \
      (c, data, len), 0) \
-    f(int, OPENSSL_init_crypto, (uint64_t opts, void* settings), \
+    f(int, OPENSSL_init_crypto, \
+     (uint64_t opts, const OPENSSL_INIT_SETTINGS* settings), \
      (opts, settings), 0) \
     f(int, RAND_bytes, (unsigned char* buf, int num), (buf, num), 0) \
     f(int, RAND_poll, (void), (), 0) \
@@ -217,7 +242,7 @@ libcrypto_load(void)
                     if (G_LIKELY(f)) {
                         libcrypto.fn.entry[i] = f;
                     } else {
-                        GWARN("%s not found in %s", fn, lib);
+                        GINFO("%s not found", fn);
                     }
                 }
                 break;
