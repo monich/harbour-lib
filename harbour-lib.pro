@@ -36,6 +36,7 @@ SOURCES += \
     src/HarbourOrganizeListModel.cpp \
     src/HarbourPolicyPlugin.cpp \
     src/HarbourProcessState.cpp \
+    src/HarbourProtoBuf.cpp \
     src/HarbourSelectionListModel.cpp \
     src/HarbourSigChildHandler.cpp \
     src/HarbourSingleImageProvider.cpp \
@@ -70,6 +71,7 @@ PUBLIC_HEADERS += \
     include/HarbourOrganizeListModel.h \
     include/HarbourPolicyPlugin.h \
     include/HarbourProcessState.h \
+    include/HarbourProtoBuf.h \
     include/HarbourSelectionListModel.h \
     include/HarbourSigChildHandler.h \
     include/HarbourSingleImageProvider.h \
