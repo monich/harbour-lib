@@ -1,6 +1,6 @@
 /*
- * Copyright (C) 2021 Jolla Ltd.
- * Copyright (C) 2021 Slava Monich <slava.monich@jolla.com>
+ * Copyright (C) 2021-2022 Jolla Ltd.
+ * Copyright (C) 2021-2022 Slava Monich <slava.monich@jolla.com>
  *
  * You may use this file under the terms of the BSD license as follows:
  *
@@ -37,13 +37,15 @@
 #include <QString>
 #include <QByteArray>
 
-class HarbourBase45 {
+class HarbourBase45
+{
     class Private;
-    HarbourBase45();
+    HarbourBase45() Q_DECL_EQ_DELETE;
+
 public:
-    static bool isValidBase45(QString aBase45);
-    static QByteArray fromBase45(QString aBase45);
-    static QString toBase45(QByteArray aBinary);
+    static bool isValidBase45(const QString);
+    static QString toBase45(const QByteArray);
+    static QByteArray fromBase45(const QString);
 };
 
 #endif // HARBOUR_BASE45_H

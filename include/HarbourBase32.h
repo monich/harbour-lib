@@ -1,6 +1,6 @@
 /*
- * Copyright (C) 2019-2021 Jolla Ltd.
- * Copyright (C) 2019-2021 Slava Monich <slava.monich@jolla.com>
+ * Copyright (C) 2019-2022 Jolla Ltd.
+ * Copyright (C) 2019-2022 Slava Monich <slava.monich@jolla.com>
  *
  * You may use this file under the terms of the BSD license as follows:
  *
@@ -37,13 +37,15 @@
 #include <QString>
 #include <QByteArray>
 
-class HarbourBase32 {
+class HarbourBase32
+{
     class Private;
-    HarbourBase32();
+    HarbourBase32() Q_DECL_EQ_DELETE;
+
 public:
-    static QByteArray fromBase32(QString aBase32);
-    static QString toBase32(QByteArray aBinary, bool aLowerCase = true);
-    static bool isValidBase32(QString aBase32);
+    static bool isValidBase32(const QString);
+    static QString toBase32(const QByteArray, bool aLowerCase = true);
+    static QByteArray fromBase32(const QString);
 };
 
 #endif // HARBOUR_BASE32_H

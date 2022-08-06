@@ -1,6 +1,6 @@
 /*
- * Copyright (C) 2021 Jolla Ltd.
- * Copyright (C) 2021 Slava Monich <slava.monich@jolla.com>
+ * Copyright (C) 2021-2022 Jolla Ltd.
+ * Copyright (C) 2021-2022 Slava Monich <slava.monich@jolla.com>
  *
  * You may use this file under the terms of the BSD license as follows:
  *
@@ -39,7 +39,8 @@
 // HarbourBase45::Private
 // ==========================================================================
 
-class HarbourBase45::Private {
+class HarbourBase45::Private
+{
 public:
     enum {
         BASE = 45,
@@ -48,7 +49,7 @@ public:
     };
     static const char mapBase45[BASE];
     static const int reverseMapBase45[REVERSE_MAP_SIZE];
-    static bool isValidChar(uint x);
+    static bool isValidChar(uint);
 };
 
 const char HarbourBase45::Private::mapBase45[HarbourBase45::Private::BASE] = {
@@ -75,16 +76,22 @@ const int HarbourBase45::Private::reverseMapBase45[HarbourBase45::Private::REVER
     33, 34, 35
 };
 
-inline bool HarbourBase45::Private::isValidChar(uint x)
+inline
+bool
+HarbourBase45::Private::isValidChar(
+    uint aChar)
 {
-    return (x < Private::REVERSE_MAP_SIZE) && Private::reverseMapBase45[x] >= 0;
+    return (aChar < Private::REVERSE_MAP_SIZE) &&
+        Private::reverseMapBase45[aChar] >= 0;
 }
 
 // ==========================================================================
 // HarbourBase45::Private
 // ==========================================================================
 
-bool HarbourBase45::isValidBase45(QString aBase45)
+bool
+HarbourBase45::isValidBase45(
+    const QString aBase45)
 {
     const int len = aBase45.length();
 
@@ -123,7 +130,9 @@ bool HarbourBase45::isValidBase45(QString aBase45)
     return false;
 }
 
-QByteArray HarbourBase45::fromBase45(QString aBase45)
+QByteArray
+HarbourBase45::fromBase45(
+    const QString aBase45)
 {
     QByteArray out;
     const int len = aBase45.length();
@@ -175,7 +184,9 @@ QByteArray HarbourBase45::fromBase45(QString aBase45)
     return out;
 }
 
-QString HarbourBase45::toBase45(QByteArray aBinary)
+QString
+HarbourBase45::toBase45(
+    const QByteArray aBinary)
 {
     const uchar* ptr = (uchar*)aBinary.constData();
     const int n = aBinary.size();

@@ -1,6 +1,6 @@
 /*
- * Copyright (C) 2019 Jolla Ltd.
- * Copyright (C) 2019 Slava Monich <slava.monich@jolla.com>
+ * Copyright (C) 2019-2022 Jolla Ltd.
+ * Copyright (C) 2019-2022 Slava Monich <slava.monich@jolla.com>
  *
  * You may use this file under the terms of the BSD license as follows:
  *
@@ -46,25 +46,33 @@ Q_STATIC_ASSERT(BASE32_BITS_PER_CHUNK == BASE32_BYTES_PER_CHUNK * 8);
 // HarbourBase32::Private
 // ==========================================================================
 
-class HarbourBase32::Private {
+class HarbourBase32::Private
+{
 public:
-    static char nibbleToBase32(int nibble, char a);
-    static int base32ToNibble(char a);
+    static char nibbleToBase32(int, char);
+    static int base32ToNibble(char);
 };
 
-inline char HarbourBase32::Private::nibbleToBase32(int nibble, char a)
+inline
+char
+HarbourBase32::Private::nibbleToBase32(
+    int aNibble,
+    char aBaseChar)
 {
-    return (nibble < 26) ? (a + nibble) : ('2' + (nibble - 26));
+    return (aNibble < 26) ? (aBaseChar + aNibble) : ('2' + (aNibble - 26));
 }
 
-inline int HarbourBase32::Private::base32ToNibble(char c)
+inline
+int
+HarbourBase32::Private::base32ToNibble(
+    char aChar)
 {
-    if (c >= 'a' && c <= 'z') {
-        return c - 'a';
-    } else if (c >= 'A' && c <= 'Z') {
-        return c - 'A';
-    } else if (c >= '2' && c <= '7') {
-        return 26 + (c - '2');
+    if (aChar >= 'a' && aChar <= 'z') {
+        return aChar - 'a';
+    } else if (aChar >= 'A' && aChar <= 'Z') {
+        return aChar - 'A';
+    } else if (aChar >= '2' && aChar <= '7') {
+        return 26 + (aChar - '2');
     } else {
         return -1;
     }
@@ -74,7 +82,9 @@ inline int HarbourBase32::Private::base32ToNibble(char c)
 // HarbourBase32
 // ==========================================================================
 
-bool HarbourBase32::isValidBase32(QString aBase32)
+bool
+HarbourBase32::isValidBase32(
+    QString aBase32)
 {
     const int n = aBase32.length();
     const QChar* chars = aBase32.constData();
@@ -133,7 +143,9 @@ bool HarbourBase32::isValidBase32(QString aBase32)
     return !empty;
 }
 
-QByteArray HarbourBase32::fromBase32(QString aBase32)
+QByteArray
+HarbourBase32::fromBase32(
+    const QString aBase32)
 {
     QByteArray out;
 
@@ -205,7 +217,10 @@ QByteArray HarbourBase32::fromBase32(QString aBase32)
     return out;
 }
 
-QString HarbourBase32::toBase32(QByteArray aBinary, bool aLowerCase)
+QString
+HarbourBase32::toBase32(
+    const QByteArray aBinary,
+    bool aLowerCase)
 {
     QString str;
     const int n = aBinary.size();
