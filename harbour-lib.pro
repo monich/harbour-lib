@@ -47,7 +47,8 @@ SOURCES += \
     src/HarbourTask.cpp \
     src/HarbourTemporaryFile.cpp \
     src/HarbourTransferMethodInfo.cpp \
-    src/HarbourTransferMethodsModel.cpp
+    src/HarbourTransferMethodsModel.cpp \
+    src/HarbourUtil.cpp
 
 greaterThan(QT_MAJOR_VERSION, 4) {
 SOURCES += \
@@ -82,7 +83,8 @@ PUBLIC_HEADERS += \
     include/HarbourTask.h \
     include/HarbourTemporaryFile.h \
     include/HarbourTransferMethodInfo.h \
-    include/HarbourTransferMethodsModel.h
+    include/HarbourTransferMethodsModel.h \
+    include/HarbourUtil.h
 
 greaterThan(QT_MAJOR_VERSION, 4) {
 PUBLIC_HEADERS += \

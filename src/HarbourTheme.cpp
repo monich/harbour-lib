@@ -1,6 +1,6 @@
 /*
- * Copyright (C) 2018-2021 Jolla Ltd.
- * Copyright (C) 2018-2021 Slava Monich <slava@monich.com>
+ * Copyright (C) 2018-2022 Jolla Ltd.
+ * Copyright (C) 2018-2022 Slava Monich <slava@monich.com>
  *
  * You may use this file under the terms of the BSD license as follows:
  *
@@ -31,9 +31,10 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "HarbourTheme.h"
-#include "HarbourSystem.h"
 #include "HarbourDebug.h"
+#include "HarbourSystem.h"
+#include "HarbourTheme.h"
+#include "HarbourUtil.h"
 
 #include <QQmlEngine>
 
@@ -212,21 +213,12 @@ QColor HarbourTheme::primaryColor() const
 
 QColor HarbourTheme::invertedPrimaryColor() const
 {
-    return invertedColor(Private::primaryColor());
-}
-
-QRgb HarbourTheme::invertedRgb(QRgb aRgb)
-{
-    return ((~(aRgb & RGB_MASK)) & RGB_MASK) | (aRgb & (~RGB_MASK));
+    return HarbourUtil::invertedColor(Private::primaryColor());
 }
 
 QColor HarbourTheme::invertedColor(const QColor& aColor)
 {
-    if (aColor.isValid()) {
-        return QColor(invertedRgb(aColor.rgba()));
-    } else {
-        return aColor;
-    }
+    return HarbourUtil::invertedColor(aColor);
 }
 
 qreal HarbourTheme::colorDifference(const QColor& aColor1, const QColor& aColor2)
