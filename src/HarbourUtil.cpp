@@ -53,7 +53,9 @@ HarbourUtil::invertedColor(
     const QColor& aColor)
 {
     if (aColor.isValid()) {
-        return QColor(invertedRgb(aColor.rgba()));
+        const QRgb inv = invertedRgb(aColor.rgba());
+
+        return QColor(qRed(inv), qGreen(inv), qBlue(inv), qAlpha(inv));
     } else {
         return aColor;
     }
