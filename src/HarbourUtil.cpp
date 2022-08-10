@@ -33,8 +33,6 @@
 
 #include "HarbourUtil.h"
 
-#include <QQmlEngine>
-
 HarbourUtil::HarbourUtil(
     QObject* aParent) :
     QObject(aParent)

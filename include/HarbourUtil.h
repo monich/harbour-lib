@@ -38,8 +38,7 @@
 #include <QColor>
 #include <QObject>
 #include <QRgb>
-
-#include <gutil_types.h>
+#include <QString>
 
 class QQmlEngine;
 class QJSEngine;
