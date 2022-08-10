@@ -31,6 +31,8 @@ all: debug release
 SRC_DIR = .
 TOP_DIR = ../..
 HARBOUR_DIR = $(TOP_DIR)
+HARBOUR_INCLUDE_DIR = $(HARBOUR_DIR)/include
+HARBOUR_SRC_DIR = $(HARBOUR_DIR)/src
 BUILD_DIR = build
 DEBUG_BUILD_DIR = $(BUILD_DIR)/debug
 RELEASE_BUILD_DIR = $(BUILD_DIR)/release
@@ -44,7 +46,7 @@ CC = $(CROSS_COMPILE)gcc
 LD = $(CC)
 MOC = qtchooser -run-tool=moc -qt=5
 WARNINGS = -Wall
-INCLUDES = -I$(BUILD_DIR) -I$(HARBOUR_DIR)/include
+INCLUDES = -I$(BUILD_DIR) -I$(HARBOUR_INCLUDE_DIR)
 BASE_FLAGS = -fPIC
 BASE_LDFLAGS = $(BASE_FLAGS) $(LDFLAGS)
 BASE_CFLAGS = $(BASE_FLAGS) $(CFLAGS)
@@ -84,6 +86,9 @@ COVERAGE_OBJS = \
   $(MOC_CPP:%.cpp=$(COVERAGE_BUILD_DIR)/moc_cpp_%.o) \
   $(SRC:%.cpp=$(COVERAGE_BUILD_DIR)/%.o) \
   $(HARBOUR_SRC:%.cpp=$(COVERAGE_BUILD_DIR)/harbour_%.o)
+GEN_FILES = \
+  $(MOC_H:%.h=$(BUILD_DIR)/moc_%.cpp) \
+  $(MOC_CPP:%.cpp=$(BUILD_DIR)/%.moc)
 
 #
 # Dependencies
@@ -96,6 +101,7 @@ ifneq ($(strip $(DEPS)),)
 endif
 endif
 
+$(GEN_FILES): | $(BUILD_DIR)
 $(DEBUG_OBJS): | $(DEBUG_BUILD_DIR)
 $(RELEASE_OBJS): | $(RELEASE_BUILD_DIR)
 $(COVERAGE_OBJS): | $(COVERAGE_BUILD_DIR)
@@ -139,10 +145,10 @@ $(RELEASE_BUILD_DIR):
 $(COVERAGE_BUILD_DIR):
 	mkdir -p $@
 
-$(BUILD_DIR)/moc_%.cpp : $(APP_DIR)/%.h
+$(BUILD_DIR)/moc_%.cpp : $(HARBOUR_INCLUDE_DIR)/%.h
 	$(MOC) $< -o $@
 
-$(BUILD_DIR)/%.moc : $(APP_DIR)/%.cpp
+$(BUILD_DIR)/%.moc : $(HARBOUR_SRC_DIR)/%.cpp
 	$(MOC) $< -o $@
 
 $(DEBUG_BUILD_DIR)/%.o : $(SRC_DIR)/%.cpp
@@ -163,31 +169,22 @@ $(RELEASE_BUILD_DIR)/moc_h_%.o : $(BUILD_DIR)/moc_%.cpp $(BUILD_DIR)
 $(COVERAGE_BUILD_DIR)/moc_h_%.o : $(BUILD_DIR)/moc_%.cpp $(BUILD_DIR)
 	$(CC) -c $(COVERAGE_CFLAGS) -MT"$@" -MF"$(@:%.o=%.d)" $< -o $@
 
-$(DEBUG_BUILD_DIR)/moc_cpp_%.o : $(HARBOUR_DIR)/%.cpp $(BUILD_DIR)/%.moc
+$(DEBUG_BUILD_DIR)/moc_cpp_%.o : $(HARBOUR_SRC_DIR)/%.cpp $(BUILD_DIR)/%.moc
 	$(CC) -c $(DEBUG_CFLAGS) -MT"$@" -MF"$(@:%.o=%.d)" $< -o $@
 
-$(RELEASE_BUILD_DIR)/moc_cpp_%.o : $(HARBOUR_DIR)/%.cpp  $(BUILD_DIR)/%.moc
+$(RELEASE_BUILD_DIR)/moc_cpp_%.o : $(HARBOUR_SRC_DIR)/%.cpp  $(BUILD_DIR)/%.moc
 	$(CC) -c $(RELEASE_CFLAGS) -MT"$@" -MF"$(@:%.o=%.d)" $< -o $@
 
-$(COVERAGE_BUILD_DIR)/moc_cpp_%.o : $(HARBOUR_DIR)/%.cpp  $(BUILD_DIR)/%.moc
+$(COVERAGE_BUILD_DIR)/moc_cpp_%.o : $(HARBOUR_SRC_DIR)/%.cpp  $(BUILD_DIR)/%.moc
 	$(CC) -c $(COVERAGE_CFLAGS) -MT"$@" -MF"$(@:%.o=%.d)" $< -o $@
 
-$(DEBUG_BUILD_DIR)/app_%.o : $(APP_DIR)/%.cpp
+$(DEBUG_BUILD_DIR)/harbour_%.o : $(HARBOUR_SRC_DIR)/%.cpp
 	$(CC) -c $(DEBUG_CFLAGS) -MT"$@" -MF"$(@:%.o=%.d)" $< -o $@
 
-$(RELEASE_BUILD_DIR)/app_%.o : $(APP_DIR)/%.cpp
+$(RELEASE_BUILD_DIR)/harbour_%.o : $(HARBOUR_SRC_DIR)/%.cpp
 	$(CC) -c $(RELEASE_CFLAGS) -MT"$@" -MF"$(@:%.o=%.d)" $< -o $@
 
-$(COVERAGE_BUILD_DIR)/app_%.o : $(APP_DIR)/%.cpp
-	$(CC) -c $(COVERAGE_CFLAGS) -MT"$@" -MF"$(@:%.o=%.d)" $< -o $@
-
-$(DEBUG_BUILD_DIR)/harbour_%.o : $(HARBOUR_DIR)/src/%.cpp
-	$(CC) -c $(DEBUG_CFLAGS) -MT"$@" -MF"$(@:%.o=%.d)" $< -o $@
-
-$(RELEASE_BUILD_DIR)/harbour_%.o : $(HARBOUR_DIR)/src/%.cpp
-	$(CC) -c $(RELEASE_CFLAGS) -MT"$@" -MF"$(@:%.o=%.d)" $< -o $@
-
-$(COVERAGE_BUILD_DIR)/harbour_%.o : $(HARBOUR_DIR)/src/%.cpp
+$(COVERAGE_BUILD_DIR)/harbour_%.o : $(HARBOUR_SRC_DIR)/%.cpp
 	$(CC) -c $(COVERAGE_CFLAGS) -MT"$@" -MF"$(@:%.o=%.d)" $< -o $@
 
 $(DEBUG_EXE): $(DEBUG_OBJS)

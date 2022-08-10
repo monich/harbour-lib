@@ -5,7 +5,8 @@
 
 TESTS="\
 TestHarbourBase32 \
-TestHarbourBase45"
+TestHarbourBase45 \
+TestHarbourUtil"
 
 function err() {
     echo "*** ERROR!" $1
