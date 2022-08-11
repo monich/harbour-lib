@@ -80,9 +80,15 @@ test_toHex(
         0x0B, 0x0C, 0x0D, 0x0E, 0x0F, 0x10, 0x11, 0x12, 0x13, 0x14
     };
 
+    const QByteArray dataBytes(data, sizeof(data));
+    const QByteArray hex(dataBytes.toHex());
+
     g_assert(HarbourUtil::toHex(QByteArray()).isEmpty());
-    g_assert(HarbourUtil::toHex(QByteArray(data, sizeof(data))) ==
-        QString("0102030405060708090a0b0c0d0e0f1011121314"));
+    g_assert(HarbourUtil::toHex(Q_NULLPTR, 0).isEmpty());
+    g_assert(HarbourUtil::toHexBytes(Q_NULLPTR, 0).isEmpty());
+    g_assert(HarbourUtil::toHex(data, sizeof(data)) == QString::fromLatin1(hex));
+    g_assert_cmpstr(HarbourUtil::toHexBytes(data, sizeof(data)).constData(), == ,
+        hex.constData());
 }
 
 /*==========================================================================*

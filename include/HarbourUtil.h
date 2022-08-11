@@ -47,6 +47,8 @@ class HarbourUtil :
     public QObject
 {
     Q_OBJECT
+    class Private;
+
 public:
     explicit HarbourUtil(QObject* aParent = Q_NULLPTR);
 
@@ -56,8 +58,9 @@ public:
     // QML (and possibly native) utilities
     Q_INVOKABLE static QColor invertedColor(const QColor&);
 
-    // Native utilities
+    // Static utilities
     static QRgb invertedRgb(QRgb);
+    static QByteArray toHexBytes(const void*, size_t);
     static QString toHex(const void*, size_t);
     static inline QString toHex(const QByteArray& aData)
         { return toHex(aData.constData(), aData.size()); }

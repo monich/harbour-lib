@@ -33,6 +33,22 @@
 
 #include "HarbourUtil.h"
 
+// ==========================================================================
+// HarbourUtil::Private
+// ==========================================================================
+
+class HarbourUtil::Private
+{
+public:
+    static const char hex[];
+};
+
+const char HarbourUtil::Private::hex[] = "0123456789abcdef";
+
+// ==========================================================================
+// HarbourUtil
+// ==========================================================================
+
 HarbourUtil::HarbourUtil(
     QObject* aParent) :
     QObject(aParent)
@@ -73,19 +89,39 @@ HarbourUtil::toHex(
     const void* aData,
     size_t aSize)
 {
-    QString str;
+    QString hex;
 
     if (aSize > 0) {
         const uchar* bytes = (const uchar*)aData;
 
-        str.reserve(2 * aSize);
+        hex.reserve(2 * aSize);
         for (size_t i = 0; i < aSize; i++) {
-            static const char hex[] = "0123456789abcdef";
             const uchar b = bytes[i];
 
-            str.append(QChar(hex[(b & 0xf0) >> 4]));
-            str.append(QChar(hex[b & 0x0f]));
+            hex.append(QChar(Private::hex[(b & 0xf0) >> 4]));
+            hex.append(QChar(Private::hex[b & 0x0f]));
         }
     }
-    return str;
+    return hex;
+}
+
+QByteArray
+HarbourUtil::toHexBytes(
+    const void* aData,
+    size_t aSize)
+{
+    QByteArray hex;
+
+    if (aSize > 0) {
+        const uchar* bytes = (const uchar*)aData;
+
+        hex.reserve(2 * aSize);
+        for (size_t i = 0; i < aSize; i++) {
+            const uchar b = bytes[i];
+
+            hex.append(QChar(Private::hex[(b & 0xf0) >> 4]));
+            hex.append(QChar(Private::hex[b & 0x0f]));
+        }
+    }
+    return hex;
 }
