@@ -110,18 +110,7 @@ HarbourUtil::toHexBytes(
     const void* aData,
     size_t aSize)
 {
-    QByteArray hex;
-
-    if (aSize > 0) {
-        const uchar* bytes = (const uchar*)aData;
-
-        hex.reserve(2 * aSize);
-        for (size_t i = 0; i < aSize; i++) {
-            const uchar b = bytes[i];
-
-            hex.append(QChar(Private::hex[(b & 0xf0) >> 4]));
-            hex.append(QChar(Private::hex[b & 0x0f]));
-        }
-    }
-    return hex;
+    return aSize ?
+        QByteArray::fromRawData((const char*) aData, (int) aSize).toHex() :
+        QByteArray();
 }
