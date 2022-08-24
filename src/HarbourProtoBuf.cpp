@@ -41,21 +41,23 @@ HarbourProtoBuf::appendVarInt(
     QByteArray* aOutput,
     quint64 aValue)
 {
-    uchar out[10];
-    quint64 value = aValue;
-    int i = sizeof(out) - 1;
+    if (aOutput) {
+        uchar out[10];
+        quint64 value = aValue;
+        int i = sizeof(out) - 1;
 
-    out[i] = value & 0x7f;
-    value >>= 7;
-    while (value) {
-        out[--i] = 0x80 | (uchar)value;
+        out[i] = value & 0x7f;
         value >>= 7;
+        while (value) {
+            out[--i] = 0x80 | (uchar)value;
+            value >>= 7;
+        }
+
+        const int n = sizeof(out) - i;
+
+        aOutput->reserve(aOutput->size() + n);
+        aOutput->append((char*)(out + i), n);
     }
-
-    const int n = sizeof(out) - i;
-
-    aOutput->reserve(aOutput->size() + n);
-    aOutput->append((char*)(out + i), n);
     return aOutput;
 }
 
@@ -74,7 +76,9 @@ HarbourProtoBuf::appendDelimitedValue(
     QByteArray* aOutput,
     const QByteArray aValue)
 {
-    appendVarInt(aOutput, aValue.size())->append(aValue);
+    if (aOutput) {
+        appendVarInt(aOutput, aValue.size())->append(aValue);
+    }
     return aOutput;
 }
 
@@ -93,20 +97,26 @@ HarbourProtoBuf::parseVarInt(
     GUtilRange* aPos,
     quint64* aResult)
 {
-    quint64 value = 0;
-    const guint8* ptr = aPos->ptr;
+    if (aPos) {
+        quint64 value = 0;
+        const guint8* ptr = aPos->ptr;
 
-    for (int i = 0; i < 10 && ptr < aPos->end; i++, ptr++) {
-        value = (value << 7) | (*ptr & 0x7f);
-        if (!(*ptr & 0x80)) {
-            aPos->ptr = ptr + 1;
-            *aResult = value;
-            return true;
+        for (int i = 0; i < 10 && ptr < aPos->end; i++, ptr++) {
+            value = (value << 7) | (*ptr & 0x7f);
+            if (!(*ptr & 0x80)) {
+                aPos->ptr = ptr + 1;
+                if (aResult) {
+                    *aResult = value;
+                }
+                return true;
+            }
+        }
+
+        // Premature end of stream or too many bytes
+        if (aResult) {
+            *aResult = 0;
         }
     }
-
-    // Premature end of stream or too many bytes
-    *aResult = 0;
     return false;
 }
 
@@ -117,14 +127,18 @@ HarbourProtoBuf::parseDelimitedValue(
     GUtilRange* aPos,
     GUtilData* aPayload)
 {
-    GUtilRange pos = *aPos;
-    quint64 size;
+    if (aPos) {
+        GUtilRange pos = *aPos;
+        quint64 size;
 
-    if (parseVarInt(&pos, &size) && (pos.ptr + size) <= pos.end) {
-        aPayload->bytes = pos.ptr;
-        aPayload->size = size;
-        aPos->ptr = pos.ptr + size;
-        return true;
+        if (parseVarInt(&pos, &size) && (pos.ptr + size) <= pos.end) {
+            if (aPayload) {
+                aPayload->bytes = pos.ptr;
+                aPayload->size = size;
+            }
+            aPos->ptr = pos.ptr + size;
+            return true;
+        }
     }
     return false;
 }
