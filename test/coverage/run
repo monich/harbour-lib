@@ -6,6 +6,7 @@
 TESTS="\
 TestHarbourBase32 \
 TestHarbourBase45 \
+TestHarbourProtoBuf \
 TestHarbourUtil"
 
 function err() {
