@@ -87,8 +87,8 @@ test_toHex(
     g_assert(HarbourUtil::toHex(Q_NULLPTR, 0).isEmpty());
     g_assert(HarbourUtil::toHexBytes(Q_NULLPTR, 0).isEmpty());
     g_assert(HarbourUtil::toHex(data, sizeof(data)) == QString::fromLatin1(hex));
-    g_assert_cmpstr(HarbourUtil::toHexBytes(data, sizeof(data)).constData(), == ,
-        hex.constData());
+    const QByteArray out(HarbourUtil::toHexBytes(data, sizeof(data)));
+    g_assert_cmpstr(out.constData(), == ,hex.constData());
 }
 
 /*==========================================================================*
