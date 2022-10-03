@@ -25,6 +25,7 @@ CONFIG(debug, debug|release) {
 SOURCES += \
     src/HarbourBase32.cpp \
     src/HarbourBase45.cpp \
+    src/HarbourBattery.cpp \
     src/HarbourClipboard.cpp \
     src/HarbourColorEditorModel.cpp \
     src/HarbourDisplayBlanking.cpp \
@@ -61,6 +62,7 @@ INCLUDEPATH += include
 PUBLIC_HEADERS += \
     include/HarbourBase32.h \
     include/HarbourBase45.h \
+    include/HarbourBattery.h \
     include/HarbourClipboard.h \
     include/HarbourColorEditorModel.h \
     include/HarbourDebug.h \
