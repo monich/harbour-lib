@@ -112,6 +112,7 @@
      (const unsigned char* in, unsigned char* out, const AES_KEY* key, \
       const int enc), \
      (in, out, key, enc)) \
+    f(BN_clear_free, (BIGNUM *a), (a)) \
     f(BN_free, (BIGNUM *a), (a)) \
     f(DES_ede3_cbc_encrypt, \
      (const unsigned char* input, unsigned char* output, long length, \
