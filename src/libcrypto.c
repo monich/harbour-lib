@@ -1,6 +1,6 @@
 /*
  * Copyright (C) 2021 Jolla Ltd.
- * Copyright (C) 2021 Slava Monich <slava.monich@jolla.com>
+ * Copyright (C) 2021-2023 Slava Monich <slava@monich.com>
  *
  * You may use this file under the terms of the BSD license as follows:
  *
@@ -118,8 +118,15 @@
       DES_key_schedule* ks1, DES_key_schedule* ks2, DES_key_schedule* ks3, \
       DES_cblock* ivec, int enc), \
      (input, output, length, ks1, ks2, ks3, ivec, enc)) \
-    f(ERR_load_crypto_strings, (void), ()) \
-    f(RSA_free, (RSA* r), (r))
+    f(/* libcrypto.so.10 */ ERR_load_crypto_strings, (void), ()) \
+    f(RSA_free, (RSA* r), (r)) \
+    f(/* libcrypto.so.1.1 */ RSA_get0_key, (const RSA* r, const BIGNUM** n, \
+        const BIGNUM** e, const BIGNUM** d), (r, n, e, d)) \
+    f(/* libcrypto.so.1.1 */ RSA_get0_factors, (const RSA* r, \
+        const BIGNUM** p, const BIGNUM** q), (r, p, q)) \
+    f(/* libcrypto.so.1.1 */ RSA_get0_crt_params, (const RSA* r, \
+        const BIGNUM** dmp1, const BIGNUM** dmq1, const BIGNUM** iqmp), \
+        (r, dmp1, dmq1, iqmp))
 
 /* f(ret,name,params,args,def) */
 #define LIBCRYPTO_FUNCTIONS2(f) \
@@ -149,7 +156,7 @@
     f(int, MD5_Init, (MD5_CTX* c), (c), 0) \
     f(int, MD5_Update, (MD5_CTX* c, const void* data, size_t len), \
      (c, data, len), 0) \
-    f(int, OPENSSL_init_crypto, \
+    f(int, /* libcrypto.so.1.1 */ OPENSSL_init_crypto, \
      (uint64_t opts, const OPENSSL_INIT_SETTINGS* settings), \
      (opts, settings), 0) \
     f(int, RAND_bytes, (unsigned char* buf, int num), (buf, num), 0) \
@@ -173,6 +180,12 @@
      (int flen, const unsigned char* from, unsigned char* to, RSA* rsa, \
       int padding), (flen, from, to, rsa, padding), 0) \
     f(int, RSA_size, (const RSA* rsa), (rsa), 0) \
+    f(int, /* libcrypto.so.1.1 */ RSA_set0_key, (RSA* r, BIGNUM* n, \
+        BIGNUM* e, BIGNUM* d), (r, n, e, d), 0) \
+    f(int, /* libcrypto.so.1.1 */ RSA_set0_factors, (RSA* r, BIGNUM* p, \
+        BIGNUM* q), (r, p, q), 0) \
+    f(int, /* libcrypto.so.1.1 */ RSA_set0_crt_params, (RSA* r, \
+        BIGNUM* dmp1, BIGNUM* dmq1, BIGNUM* iqmp), (r, dmp1, dmq1, iqmp), 0) \
     f(unsigned char*, SHA1, (const unsigned char* d, size_t n, \
       unsigned char* md), (d, n, md), NULL) \
     f(int, SHA1_Final, (unsigned char* md, SHA_CTX* c), (md, c), 0) \
