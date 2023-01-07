@@ -1,6 +1,6 @@
 /*
  * Copyright (C) 2019 Jolla Ltd.
- * Copyright (C) 2019 Slava Monich <slava.monich@jolla.com>
+ * Copyright (C) 2019-2023 Slava Monich <slava@jolla.com>
  *
  * You may use this file under the terms of the BSD license as follows:
  *
@@ -37,7 +37,8 @@
 #include <QtQml>
 #include <QIdentityProxyModel>
 
-class HarbourSelectionListModel : public QIdentityProxyModel {
+class HarbourSelectionListModel : public QIdentityProxyModel
+{
     Q_OBJECT
     Q_PROPERTY(QObject* sourceModel READ sourceModel WRITE setSourceModelObject NOTIFY sourceModelObjectChanged)
     Q_PROPERTY(QList<int> selectedRows READ selectedRows NOTIFY selectedRowsChanged)
@@ -47,19 +48,20 @@ class HarbourSelectionListModel : public QIdentityProxyModel {
 public:
     HarbourSelectionListModel(QObject* aParent = Q_NULLPTR);
 
-    void setSourceModelObject(QObject* aModel);
+    void setSourceModelObject(QObject*);
 
     QList<int> selectedRows() const;
     int selectionCount() const;
 
     Q_INVOKABLE void selectAll();
     Q_INVOKABLE void clearSelection();
+    Q_INVOKABLE void toggleRows(const QList<int>);
 
     // QAbstractItemModel
-    Qt::ItemFlags flags(const QModelIndex& aIndex) const Q_DECL_OVERRIDE;
+    Qt::ItemFlags flags(const QModelIndex&) const Q_DECL_OVERRIDE;
     QHash<int,QByteArray> roleNames() const Q_DECL_OVERRIDE;
-    QVariant data(const QModelIndex& aIndex, int aRole) const Q_DECL_OVERRIDE;
-    bool setData(const QModelIndex& aIndex, const QVariant& aValue, int aRole) Q_DECL_OVERRIDE;
+    QVariant data(const QModelIndex&, int) const Q_DECL_OVERRIDE;
+    bool setData(const QModelIndex&, const QVariant&, int) Q_DECL_OVERRIDE;
 
 Q_SIGNALS:
     void sourceModelObjectChanged();

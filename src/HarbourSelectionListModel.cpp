@@ -1,6 +1,6 @@
-/*
+﻿/*
  * Copyright (C) 2019 Jolla Ltd.
- * Copyright (C) 2019 Slava Monich <slava.monich@jolla.com>
+ * Copyright (C) 2019-2023 Slava Monich <slava@jolla.com>
  *
  * You may use this file under the terms of the BSD license as follows:
  *
@@ -41,20 +41,22 @@
 // HarbourSelectionListModel::Private
 // ==========================================================================
 
-class HarbourSelectionListModel::Private : public QObject {
+class HarbourSelectionListModel::Private : public QObject
+{
     Q_OBJECT
 
 public:
-    Private(HarbourSelectionListModel* aParent);
+    Private(HarbourSelectionListModel*);
 
     HarbourSelectionListModel* parentModel();
-    static int binaryFind(const QList<int> aList, int aValue);
-    bool isSelectionRole(int aRole) const;
-    bool isSelectedRow(int aRow) const;
-    int findSelectedRow(int aRow) const;
-    void selectRow(int aRow);
-    void unselectRow(int aRow);
-    void selectionChangedAt(int aRow);
+    static int binaryFind(const QList<int>, int);
+    bool isSelectionRole(int) const;
+    bool isSelectedRow(int) const;
+    int findSelectedRow(int) const;
+    void selectRow(int);
+    void unselectRow(int);
+    void toggleRows(const QList<int>);
+    void selectionChangedAt(int);
     void clearSelection();
     void selectAll();
     void reset();
@@ -68,7 +70,8 @@ public:
     int iLastKnownCount;
 };
 
-HarbourSelectionListModel::Private::Private(HarbourSelectionListModel* aParent) :
+HarbourSelectionListModel::Private::Private(
+    HarbourSelectionListModel* aParent) :
     QObject(aParent),
     iLastKnownCount(0)
 {
@@ -77,22 +80,33 @@ HarbourSelectionListModel::Private::Private(HarbourSelectionListModel* aParent) 
     connect(aParent, SIGNAL(rowsRemoved(QModelIndex,int,int)), SLOT(onCountChanged()));
 }
 
-inline HarbourSelectionListModel* HarbourSelectionListModel::Private::parentModel()
+inline
+HarbourSelectionListModel*
+HarbourSelectionListModel::Private::parentModel()
 {
     return qobject_cast<HarbourSelectionListModel*>(parent());
 }
 
-inline bool HarbourSelectionListModel::Private::isSelectionRole(int aRole) const
+inline
+bool
+HarbourSelectionListModel::Private::isSelectionRole(
+    int aRole) const
 {
     return !iSelectedRole.isEmpty() && iSelectedRole.first() == aRole;
 }
 
-inline bool HarbourSelectionListModel::Private::isSelectedRow(int aRow) const
+inline
+bool
+HarbourSelectionListModel::Private::isSelectedRow(
+    int aRow) const
 {
     return findSelectedRow(aRow) >= 0;
 }
 
-int HarbourSelectionListModel::Private::binaryFind(const QList<int> aList, int aValue)
+int
+HarbourSelectionListModel::Private::binaryFind(
+    const QList<int> aList,
+    int aValue)
 {
     // It turned out to be significantly easier to copy/paste this code
     // than to fight with qBinaryFind and iterators which behave strangely
@@ -117,12 +131,15 @@ int HarbourSelectionListModel::Private::binaryFind(const QList<int> aList, int a
     return -(low + 1);
 }
 
-int HarbourSelectionListModel::Private::findSelectedRow(int aRow) const
+int
+HarbourSelectionListModel::Private::findSelectedRow(
+    int aRow) const
 {
     return binaryFind(iSelectedRows, aRow);
 }
 
-void HarbourSelectionListModel::Private::onCountChanged()
+void
+HarbourSelectionListModel::Private::onCountChanged()
 {
     HarbourSelectionListModel* model = parentModel();
     const int count = model->rowCount();
@@ -140,7 +157,8 @@ void HarbourSelectionListModel::Private::onCountChanged()
     }
 }
 
-void HarbourSelectionListModel::Private::clearSelection()
+void
+HarbourSelectionListModel::Private::clearSelection()
 {
     if (!iSelectedRows.isEmpty()) {
         HDEBUG("clearing selection");
@@ -159,7 +177,8 @@ void HarbourSelectionListModel::Private::clearSelection()
     }
 }
 
-void HarbourSelectionListModel::Private::selectAll()
+void
+HarbourSelectionListModel::Private::selectAll()
 {
     HarbourSelectionListModel* model = parentModel();
     const int count = model->rowCount();
@@ -178,13 +197,16 @@ void HarbourSelectionListModel::Private::selectAll()
     }
 }
 
-void HarbourSelectionListModel::Private::reset()
+void
+HarbourSelectionListModel::Private::reset()
 {
     iSelectedRole.clear();
     clearSelection();
 }
 
-void HarbourSelectionListModel::Private::selectionChangedAt(int aRow)
+void
+HarbourSelectionListModel::Private::selectionChangedAt(
+    int aRow)
 {
     if (!iSelectedRole.isEmpty()) {
         HarbourSelectionListModel* model = parentModel();
@@ -193,7 +215,9 @@ void HarbourSelectionListModel::Private::selectionChangedAt(int aRow)
     }
 }
 
-void HarbourSelectionListModel::Private::selectRow(int aRow)
+void
+HarbourSelectionListModel::Private::selectRow(
+    int aRow)
 {
     HarbourSelectionListModel* model = parentModel();
     if (aRow >= 0 && aRow < model->rowCount()) {
@@ -207,7 +231,9 @@ void HarbourSelectionListModel::Private::selectRow(int aRow)
     }
 }
 
-void HarbourSelectionListModel::Private::unselectRow(int aRow)
+void
+HarbourSelectionListModel::Private::unselectRow(
+    int aRow)
 {
     HarbourSelectionListModel* model = parentModel();
     if (aRow >= 0 && aRow < model->rowCount()) {
@@ -221,20 +247,65 @@ void HarbourSelectionListModel::Private::unselectRow(int aRow)
     }
 }
 
+void
+HarbourSelectionListModel::Private::toggleRows(
+    const QList<int> aRows)
+{
+    int i;
+    const int n = aRows.count();
+
+    // Sort and remove duplicates
+    QList<int> rows;
+    rows.reserve(n);
+    for (i = 0; i < n; i++) {
+        const int row = aRows.at(i);
+        const int pos = binaryFind(rows, row);
+        if (pos < 0) rows.insert(-pos - 1, row);
+    }
+
+    HarbourSelectionListModel* model = parentModel();
+    bool changed = false;
+    const int k = rows.count();
+
+    for (i = 0; i < k; i++) {
+        const int row = rows.at(i);
+        if (row >= 0 && row < model->rowCount()) {
+            const int pos = findSelectedRow(row);
+            if (pos < 0) {
+                HDEBUG(row << "selected at" << (-pos - 1));
+                iSelectedRows.insert(-pos - 1, row);
+                selectionChangedAt(row);
+            } else {
+                HDEBUG(row << "unselected at" << pos);
+                iSelectedRows.removeAt(pos);
+                selectionChangedAt(row);
+            }
+            changed = true;
+        }
+    }
+
+    if (changed) {
+        Q_EMIT model->selectedRowsChanged();
+    }
+}
+
 // ==========================================================================
 // HarbourSelectionListModel
 // ==========================================================================
 
 #define SUPER QIdentityProxyModel
 
-HarbourSelectionListModel::HarbourSelectionListModel(QObject* aParent) :
+HarbourSelectionListModel::HarbourSelectionListModel(
+    QObject* aParent) :
     SUPER(aParent),
     iPrivate(new Private(this))
 {
     connect(this, SIGNAL(sourceModelChanged()), SIGNAL(sourceModelObjectChanged()));
 }
 
-void HarbourSelectionListModel::setSourceModelObject(QObject* aModel)
+void
+HarbourSelectionListModel::setSourceModelObject(
+    QObject* aModel)
 {
     if (sourceModel() != aModel) {
         HDEBUG(aModel);
@@ -243,32 +314,46 @@ void HarbourSelectionListModel::setSourceModelObject(QObject* aModel)
     }
 }
 
-QList<int> HarbourSelectionListModel::selectedRows() const
+QList<int>
+HarbourSelectionListModel::selectedRows() const
 {
     return iPrivate->iSelectedRows;
 }
 
-int HarbourSelectionListModel::selectionCount() const
+int
+HarbourSelectionListModel::selectionCount() const
 {
     return iPrivate->iSelectedRows.count();
 }
 
-void HarbourSelectionListModel::selectAll()
+void
+HarbourSelectionListModel::selectAll()
 {
     iPrivate->selectAll();
 }
 
-void HarbourSelectionListModel::clearSelection()
+void
+HarbourSelectionListModel::clearSelection()
 {
     iPrivate->clearSelection();
 }
 
-Qt::ItemFlags HarbourSelectionListModel::flags(const QModelIndex& aIndex) const
+void
+HarbourSelectionListModel::toggleRows(
+    const QList<int> aRows)
+{
+    iPrivate->toggleRows(aRows);
+}
+
+Qt::ItemFlags
+HarbourSelectionListModel::flags(
+    const QModelIndex& aIndex) const
 {
     return SUPER::flags(aIndex) | Qt::ItemIsEditable;
 }
 
-QHash<int,QByteArray> HarbourSelectionListModel::roleNames() const
+QHash<int,QByteArray>
+HarbourSelectionListModel::roleNames() const
 {
     QHash<int,QByteArray> roles = SUPER::roleNames();
     int selectedRole;
@@ -286,7 +371,10 @@ QHash<int,QByteArray> HarbourSelectionListModel::roleNames() const
     return roles;
 }
 
-QVariant HarbourSelectionListModel::data(const QModelIndex& aIndex, int aRole) const
+QVariant
+HarbourSelectionListModel::data(
+    const QModelIndex& aIndex,
+    int aRole) const
 {
     if (iPrivate->isSelectionRole(aRole)) {
         return iPrivate->isSelectedRow(aIndex.row());
@@ -295,7 +383,11 @@ QVariant HarbourSelectionListModel::data(const QModelIndex& aIndex, int aRole) c
     }
 }
 
-bool HarbourSelectionListModel::setData(const QModelIndex& aIndex, const QVariant& aValue, int aRole)
+bool
+HarbourSelectionListModel::setData(
+    const QModelIndex& aIndex,
+    const QVariant& aValue,
+    int aRole)
 {
     if (iPrivate->isSelectionRole(aRole)) {
         if (aValue.toBool()) {
