@@ -41,21 +41,46 @@
 // HarbourSelectionListModel::Private
 // ==========================================================================
 
+// s(SignalName,signalName)
+#define QUEUED_SIGNALS(s) \
+    s(NonSelectableRows,nonSelectableRows) \
+    s(SelectedRows,selectedRows) \
+    s(SelectableCount,selectableCount) \
+    s(SelectionCount,selectionCount) \
+    s(Count,count)
+
 class HarbourSelectionListModel::Private : public QObject
 {
     Q_OBJECT
 
 public:
+    typedef void (HarbourSelectionListModel::*SignalEmitter)();
+    typedef uint SignalMask;
+
+    enum Signal {
+#define SIGNAL_ENUM_(Name,name) Signal##Name##Changed,
+        QUEUED_SIGNALS(SIGNAL_ENUM_)
+#undef SIGNAL_ENUM_
+        SignalCount
+    };
+
     Private(HarbourSelectionListModel*);
 
-    HarbourSelectionListModel* parentModel();
     static int binaryFind(const QList<int>, int);
+
+    HarbourSelectionListModel* parentModel();
+    void queueSignal(Signal aSignal);
+    void emitQueuedSignals();
     bool isSelectionRole(int) const;
     bool isSelectedRow(int) const;
+    bool isSelectableRow(int) const;
     int findSelectedRow(int) const;
+    void updateCounts();
     void selectRow(int);
     void unselectRow(int);
     void toggleRows(const QList<int>);
+    void setNonSelectableRows(const QList<int>);
+    void selectedRowChanged(int);
     void selectionChangedAt(int);
     void clearSelection();
     void selectAll();
@@ -65,42 +90,25 @@ public Q_SLOTS:
     void onCountChanged();
 
 public:
+    SignalMask iQueuedSignals;
+    Signal iFirstQueuedSignal;
     QList<int> iSelectedRows;
-    QVector<int> iSelectedRole;
+    QList<int> iNonSelectableRows;
+    QList<int> iNormalizedNonSelectableRows;
+    QVector<int> iSelectedRole; // Passed to dataChanged as an argument
+    int iLastKnownSelectableCount;
     int iLastKnownCount;
 };
 
 HarbourSelectionListModel::Private::Private(
     HarbourSelectionListModel* aParent) :
     QObject(aParent),
+    iLastKnownSelectableCount(0),
     iLastKnownCount(0)
 {
     connect(aParent, SIGNAL(modelReset()), SLOT(onCountChanged()));
     connect(aParent, SIGNAL(rowsInserted(QModelIndex,int,int)), SLOT(onCountChanged()));
     connect(aParent, SIGNAL(rowsRemoved(QModelIndex,int,int)), SLOT(onCountChanged()));
-}
-
-inline
-HarbourSelectionListModel*
-HarbourSelectionListModel::Private::parentModel()
-{
-    return qobject_cast<HarbourSelectionListModel*>(parent());
-}
-
-inline
-bool
-HarbourSelectionListModel::Private::isSelectionRole(
-    int aRole) const
-{
-    return !iSelectedRole.isEmpty() && iSelectedRole.first() == aRole;
-}
-
-inline
-bool
-HarbourSelectionListModel::Private::isSelectedRow(
-    int aRow) const
-{
-    return findSelectedRow(aRow) >= 0;
 }
 
 int
@@ -131,6 +139,79 @@ HarbourSelectionListModel::Private::binaryFind(
     return -(low + 1);
 }
 
+inline
+HarbourSelectionListModel*
+HarbourSelectionListModel::Private::parentModel()
+{
+    return qobject_cast<HarbourSelectionListModel*>(parent());
+}
+
+void
+HarbourSelectionListModel::Private::queueSignal(
+    Signal aSignal)
+{
+    if (aSignal >= 0 && aSignal < SignalCount) {
+        const SignalMask signalBit = (SignalMask(1) << aSignal);
+        if (iQueuedSignals) {
+            iQueuedSignals |= signalBit;
+            if (iFirstQueuedSignal > aSignal) {
+                iFirstQueuedSignal = aSignal;
+            }
+        } else {
+            iQueuedSignals = signalBit;
+            iFirstQueuedSignal = aSignal;
+        }
+    }
+}
+
+void
+HarbourSelectionListModel::Private::emitQueuedSignals()
+{
+    static const SignalEmitter emitSignal [] = {
+#define SIGNAL_EMITTER_(Name,name) &HarbourSelectionListModel::name##Changed,
+        QUEUED_SIGNALS(SIGNAL_EMITTER_)
+#undef SIGNAL_EMITTER_
+    };
+    if (iQueuedSignals) {
+        HarbourSelectionListModel* model = parentModel();
+        // Reset first queued signal before emitting the signals.
+        // Signal handlers may emit new signals.
+        uint i = iFirstQueuedSignal;
+        iFirstQueuedSignal = SignalCount;
+        for (; i < SignalCount && iQueuedSignals; i++) {
+            const SignalMask signalBit = (SignalMask(1) << i);
+            if (iQueuedSignals & signalBit) {
+                iQueuedSignals &= ~signalBit;
+                Q_EMIT (model->*(emitSignal[i]))();
+            }
+        }
+    }
+}
+
+inline
+bool
+HarbourSelectionListModel::Private::isSelectionRole(
+    int aRole) const
+{
+    return !iSelectedRole.isEmpty() && iSelectedRole.first() == aRole;
+}
+
+inline
+bool
+HarbourSelectionListModel::Private::isSelectedRow(
+    int aRow) const
+{
+    return findSelectedRow(aRow) >= 0;
+}
+
+inline
+bool
+HarbourSelectionListModel::Private::isSelectableRow(
+    int aRow) const
+{
+    return binaryFind(iNonSelectableRows, aRow) < 0;
+}
+
 int
 HarbourSelectionListModel::Private::findSelectedRow(
     int aRow) const
@@ -139,22 +220,43 @@ HarbourSelectionListModel::Private::findSelectedRow(
 }
 
 void
-HarbourSelectionListModel::Private::onCountChanged()
+HarbourSelectionListModel::Private::updateCounts()
 {
-    HarbourSelectionListModel* model = parentModel();
-    const int count = model->rowCount();
+    const int count = parentModel()->rowCount();
+
+    int selectableCount = count;
+    const int n = iNormalizedNonSelectableRows.count();
+    for (int i = 0; i < n; i++) {
+        const int row = iNormalizedNonSelectableRows.at(i);
+
+        if (row < count) {
+            selectableCount--;
+        } else {
+            break;
+        }
+    }
+
+    if (iLastKnownSelectableCount != selectableCount) {
+        iLastKnownSelectableCount = selectableCount;
+        queueSignal(SignalSelectableCountChanged);
+    }
+
     if (iLastKnownCount != count) {
         iLastKnownCount = count;
-        bool changed = false;
+        queueSignal(SignalCountChanged);
         while (!iSelectedRows.isEmpty() && iSelectedRows.last() >= count) {
             iSelectedRows.removeAt(iSelectedRows.count() - 1);
-            changed = true;
+            queueSignal(SignalSelectionCountChanged);
+            queueSignal(SignalSelectedRowsChanged);
         }
-        if (changed) {
-            Q_EMIT model->selectedRowsChanged();
-        }
-        Q_EMIT model->countChanged();
     }
+}
+
+void
+HarbourSelectionListModel::Private::onCountChanged()
+{
+    updateCounts();
+    emitQueuedSignals();
 }
 
 void
@@ -162,7 +264,6 @@ HarbourSelectionListModel::Private::clearSelection()
 {
     if (!iSelectedRows.isEmpty()) {
         HDEBUG("clearing selection");
-        HarbourSelectionListModel* model = parentModel();
         if (!iSelectedRole.isEmpty()) {
             const QList<int> rows(iSelectedRows);
             iSelectedRows.clear();
@@ -173,28 +274,45 @@ HarbourSelectionListModel::Private::clearSelection()
         } else {
             iSelectedRows.clear();
         }
-        Q_EMIT model->selectedRowsChanged();
+
+        queueSignal(SignalSelectionCountChanged);
+        queueSignal(SignalSelectedRowsChanged);
+        emitQueuedSignals();
     }
 }
 
 void
 HarbourSelectionListModel::Private::selectAll()
 {
-    HarbourSelectionListModel* model = parentModel();
-    const int count = model->rowCount();
-    if (iSelectedRows.count() < count) {
-        const QList<int> prevSelection(iSelectedRows);
-        iSelectedRows.reserve(count);
-        int i;
-        for (i = 0; i < iSelectedRows.count(); i++) iSelectedRows[i] = i;
-        while (i < count) iSelectedRows.append(i++);
-        for (i = 0; i < count; i++) {
-            if (binaryFind(prevSelection, i) < 0) {
-                selectionChangedAt(i);
-            }
+    const int count = parentModel()->rowCount();
+    QList<int> rows;
+    int i;
+
+    rows.reserve(count);
+    for (i = 0; i < count; i++) {
+        if (binaryFind(iNormalizedNonSelectableRows, i) < 0) {
+            rows.append(i);
         }
-        Q_EMIT model->selectedRowsChanged();
     }
+
+    if (iSelectedRows.count() != rows.count()) {
+        queueSignal(SignalSelectionCountChanged);
+    }
+
+    const QList<int> prevSelection(iSelectedRows);
+    if (iSelectedRows != rows) {
+        iSelectedRows = rows;
+        queueSignal(SignalSelectedRowsChanged);
+    }
+
+    for (i = 0; i < iSelectedRows.count(); i++) {
+        const int row = iSelectedRows.at(i);
+
+        if (binaryFind(prevSelection, row) < 0) {
+            selectionChangedAt(row);
+        }
+    }
+    emitQueuedSignals();
 }
 
 void
@@ -216,17 +334,29 @@ HarbourSelectionListModel::Private::selectionChangedAt(
 }
 
 void
+HarbourSelectionListModel::Private::selectedRowChanged(
+    int aRow)
+{
+    queueSignal(SignalSelectionCountChanged);
+    queueSignal(SignalSelectedRowsChanged);
+    selectionChangedAt(aRow);
+    emitQueuedSignals();
+}
+
+void
 HarbourSelectionListModel::Private::selectRow(
     int aRow)
 {
-    HarbourSelectionListModel* model = parentModel();
-    if (aRow >= 0 && aRow < model->rowCount()) {
+    if (aRow >= 0 && aRow < parentModel()->rowCount()) {
         const int pos = findSelectedRow(aRow);
         if (pos < 0) {
-            HDEBUG(aRow << "selected at" << (-pos - 1));
-            iSelectedRows.insert(-pos - 1, aRow);
-            selectionChangedAt(aRow);
-            Q_EMIT model->selectedRowsChanged();
+            if (isSelectableRow(aRow)) {
+                HDEBUG(aRow << "selected at" << (-pos - 1));
+                iSelectedRows.insert(-pos - 1, aRow);
+                selectedRowChanged(aRow);
+            } else {
+                HDEBUG("Row" << aRow << "is not selectable");
+            }
         }
     }
 }
@@ -235,14 +365,12 @@ void
 HarbourSelectionListModel::Private::unselectRow(
     int aRow)
 {
-    HarbourSelectionListModel* model = parentModel();
-    if (aRow >= 0 && aRow < model->rowCount()) {
+    if (aRow >= 0 && aRow < parentModel()->rowCount()) {
         const int pos = findSelectedRow(aRow);
-         if (pos >= 0) {
-             HDEBUG(aRow << "unselected at" << pos);
-             iSelectedRows.removeAt(pos);
-             selectionChangedAt(aRow);
-             Q_EMIT model->selectedRowsChanged();
+        if (pos >= 0) {
+            HDEBUG(aRow << "unselected at" << pos);
+            iSelectedRows.removeAt(pos);
+            selectedRowChanged(aRow);
         }
     }
 }
@@ -264,28 +392,57 @@ HarbourSelectionListModel::Private::toggleRows(
     }
 
     HarbourSelectionListModel* model = parentModel();
-    bool changed = false;
     const int k = rows.count();
+    const int prevSelectedCount = iSelectedRows.count();
 
     for (i = 0; i < k; i++) {
         const int row = rows.at(i);
         if (row >= 0 && row < model->rowCount()) {
             const int pos = findSelectedRow(row);
-            if (pos < 0) {
-                HDEBUG(row << "selected at" << (-pos - 1));
-                iSelectedRows.insert(-pos - 1, row);
-                selectionChangedAt(row);
-            } else {
+            if (pos >= 0) {
                 HDEBUG(row << "unselected at" << pos);
                 iSelectedRows.removeAt(pos);
                 selectionChangedAt(row);
+            } else if (isSelectableRow(row)) {
+                HDEBUG(row << "selected at" << (-pos - 1));
+                iSelectedRows.insert(-pos - 1, row);
+                selectionChangedAt(row);
             }
-            changed = true;
+            queueSignal(SignalSelectedRowsChanged);
         }
     }
 
-    if (changed) {
-        Q_EMIT model->selectedRowsChanged();
+    if (prevSelectedCount != iSelectedRows.count()) {
+        queueSignal(SignalSelectionCountChanged);
+    }
+
+    emitQueuedSignals();
+}
+
+void
+HarbourSelectionListModel::Private::setNonSelectableRows(
+    const QList<int> aRows)
+{
+    if (iNonSelectableRows != aRows) {
+        iNonSelectableRows = aRows;
+        queueSignal(SignalNonSelectableRowsChanged);
+
+        // Sort and remove regatives and duplicates
+        iNormalizedNonSelectableRows.clear();
+        iNormalizedNonSelectableRows.reserve(aRows.count());
+
+        const int n = aRows.count();
+        for (int i = 0; i < n; i++) {
+            const int row = aRows.at(i);
+            if (row >= 0) {
+                const int pos = binaryFind(iNormalizedNonSelectableRows, row);
+                if (pos < 0) iNormalizedNonSelectableRows.insert(-pos - 1, row);
+            }
+        }
+
+        HDEBUG(iNormalizedNonSelectableRows);
+        updateCounts();
+        emitQueuedSignals();
     }
 }
 
@@ -315,6 +472,19 @@ HarbourSelectionListModel::setSourceModelObject(
 }
 
 QList<int>
+HarbourSelectionListModel::nonSelectableRows() const
+{
+    return iPrivate->iNonSelectableRows;
+}
+
+void
+HarbourSelectionListModel::setNonSelectableRows(
+    const QList<int> aRows)
+{
+    iPrivate->setNonSelectableRows(aRows);
+}
+
+QList<int>
 HarbourSelectionListModel::selectedRows() const
 {
     return iPrivate->iSelectedRows;
@@ -324,6 +494,12 @@ int
 HarbourSelectionListModel::selectionCount() const
 {
     return iPrivate->iSelectedRows.count();
+}
+
+int
+HarbourSelectionListModel::selectableCount() const
+{
+    return iPrivate->iLastKnownSelectableCount;
 }
 
 void

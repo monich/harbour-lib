@@ -41,8 +41,10 @@ class HarbourSelectionListModel : public QIdentityProxyModel
 {
     Q_OBJECT
     Q_PROPERTY(QObject* sourceModel READ sourceModel WRITE setSourceModelObject NOTIFY sourceModelObjectChanged)
+    Q_PROPERTY(QList<int> nonSelectableRows READ nonSelectableRows WRITE setNonSelectableRows NOTIFY nonSelectableRowsChanged)
     Q_PROPERTY(QList<int> selectedRows READ selectedRows NOTIFY selectedRowsChanged)
-    Q_PROPERTY(int selectionCount READ selectionCount NOTIFY selectedRowsChanged)
+    Q_PROPERTY(int selectableCount READ selectableCount NOTIFY selectableCountChanged)
+    Q_PROPERTY(int selectionCount READ selectionCount NOTIFY selectionCountChanged)
     Q_PROPERTY(int count READ rowCount NOTIFY countChanged)
 
 public:
@@ -50,7 +52,11 @@ public:
 
     void setSourceModelObject(QObject*);
 
+    QList<int> nonSelectableRows() const;
+    void setNonSelectableRows(const QList<int>);
+
     QList<int> selectedRows() const;
+    int selectableCount() const;
     int selectionCount() const;
 
     Q_INVOKABLE void selectAll();
@@ -65,7 +71,10 @@ public:
 
 Q_SIGNALS:
     void sourceModelObjectChanged();
+    void nonSelectableRowsChanged();
     void selectedRowsChanged();
+    void selectableCountChanged();
+    void selectionCountChanged();
     void countChanged();
 
 private:
