@@ -1,6 +1,6 @@
 /*
+ * Copyright (C) 2020-2023 Slava Monich <slava@monich.com>
  * Copyright (C) 2020 Jolla Ltd.
- * Copyright (C) 2020 Slava Monich <slava.monich@jolla.com>
  *
  * You may use this file under the terms of the BSD license as follows:
  *
@@ -33,6 +33,12 @@
 
 import QtQuick 2.0
 import Sailfish.Silica 1.0
+
+// In-process sharing doesn't work since Sailfish OS 4.2.0 (or more
+// specifically, since declarative-transferengine-qt5 package >= 0.4.0)
+//
+// This code can only be of interest to those who want to make their
+// apps compatible with older releases of Sailfish OS.
 
 SilicaListView {
     id: view
@@ -113,8 +119,9 @@ SilicaListView {
     }
 
     footer: BackgroundItem {
-        enabled: model.canShowAccounts && !model.showAccountsPending
-        opacity: enabled ? 1.0 : 0.4
+        // Don't show the "Add account" item before the initial query completes
+        enabled: model.valid && model.canShowAccounts && !model.showAccountsPending
+        opacity: model.valid ? (enabled ? 1.0 : 0.4) : 0.0
 
         Image {
             id: addAccountIcon

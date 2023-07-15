@@ -1,6 +1,6 @@
 /*
+ * Copyright (C) 2016-2023 Slava Monich <slava@monich.com>
  * Copyright (C) 2016-2020 Jolla Ltd.
- * Copyright (C) 2016-2020 Slava Monich <slava.monich@jolla.com>
  *
  * You may use this file under the terms of the BSD license as follows:
  *
@@ -35,14 +35,13 @@
 #include "HarbourDebug.h"
 
 #include <QTranslator>
-#include <QQmlEngine>
 #include <QRegExp>
 
 // ==========================================================================
 // HarbourTransferMethodsModel::TransferEngine
 // ==========================================================================
 
-class HarbourTransferMethodsModel::TransferEngine: public QDBusAbstractInterface
+class HarbourTransferMethodsModel::TransferEngine : public QDBusAbstractInterface
 {
     Q_OBJECT
 
@@ -66,7 +65,7 @@ Q_SIGNALS: // SIGNALS
 // HarbourTransferMethodsModel::Private
 // ==========================================================================
 
-class HarbourTransferMethodsModel::Private: public QObject
+class HarbourTransferMethodsModel::Private : public QObject
 {
     Q_OBJECT
     typedef QDBusPendingCallWatcher* (Private::*RequestUpdate)();
@@ -81,24 +80,24 @@ public:
         AccountIconRole
     };
 
-    Private(HarbourTransferMethodsModel* aModel);
-    ~Private();
+    Private(HarbourTransferMethodsModel*);
+    ~Private() Q_DECL_OVERRIDE;
 
 public:
     HarbourTransferMethodsModel* parentModel();
-    static QRegExp regExp(QString aRegExp);
+    static QRegExp regExp(QString);
     void filterModel();
     QDBusPendingCallWatcher* checkTransferMethods();
     QDBusPendingCallWatcher* requestTransferMethods();
     QDBusPendingCallWatcher* requestTransferMethods2();
-    void setTransferMethods2(HarbourTransferMethodInfo2List aList);
+    void setTransferMethods2(HarbourTransferMethodInfo2List);
     bool showAccounts();
 
 private Q_SLOTS:
-    void onTransferMethodsCheckFinished(QDBusPendingCallWatcher* aWatch);
-    void onTransferMethodsFinished(QDBusPendingCallWatcher* aWatch);
-    void onTransferMethods2Finished(QDBusPendingCallWatcher* aWatch);
-    void onShowAccountsFinished(QDBusPendingCallWatcher* aWatch);
+    void onTransferMethodsCheckFinished(QDBusPendingCallWatcher*);
+    void onTransferMethodsFinished(QDBusPendingCallWatcher*);
+    void onTransferMethods2Finished(QDBusPendingCallWatcher*);
+    void onShowAccountsFinished(QDBusPendingCallWatcher*);
     void requestUpdate();
 
 public:
@@ -110,6 +109,7 @@ public:
     QDBusPendingCallWatcher* iUpdateWatcher;
     QDBusPendingCallWatcher* iShowAccountsWatcher;
     bool iShowAccountsFailed;
+    bool iValid;
     TransferEngine* iTransferEngine;
 };
 
@@ -120,6 +120,7 @@ HarbourTransferMethodsModel::Private::Private(HarbourTransferMethodsModel* aMode
     iUpdateWatcher(Q_NULLPTR),
     iShowAccountsWatcher(Q_NULLPTR),
     iShowAccountsFailed(false),
+    iValid(false),
     iTransferEngine(new TransferEngine(this))
 {
     connect(iTransferEngine,
@@ -133,12 +134,15 @@ HarbourTransferMethodsModel::Private::~Private()
     delete iTransferEngine;
 }
 
-inline HarbourTransferMethodsModel* HarbourTransferMethodsModel::Private::parentModel()
+inline
+HarbourTransferMethodsModel*
+HarbourTransferMethodsModel::Private::parentModel()
 {
     return qobject_cast<HarbourTransferMethodsModel*>(parent());
 }
 
-void HarbourTransferMethodsModel::Private::requestUpdate()
+void
+HarbourTransferMethodsModel::Private::requestUpdate()
 {
     if (iUpdateWatcher) {
         HDEBUG("dropping pending method list query");
@@ -148,7 +152,9 @@ void HarbourTransferMethodsModel::Private::requestUpdate()
     iUpdateWatcher = (this->*iRequestUpdate)();
 }
 
-void HarbourTransferMethodsModel::Private::setTransferMethods2(HarbourTransferMethodInfo2List aList)
+void
+HarbourTransferMethodsModel::Private::setTransferMethods2(
+    HarbourTransferMethodInfo2List aList)
 {
     iRequestUpdate = &Private::requestTransferMethods2;
     HDEBUG(aList.count() << "methods");
@@ -162,7 +168,8 @@ void HarbourTransferMethodsModel::Private::setTransferMethods2(HarbourTransferMe
     }
 }
 
-QDBusPendingCallWatcher* HarbourTransferMethodsModel::Private::checkTransferMethods()
+QDBusPendingCallWatcher*
+HarbourTransferMethodsModel::Private::checkTransferMethods()
 {
     // First try transferMethods2() and see if it works
     QDBusPendingCallWatcher* watcher = new QDBusPendingCallWatcher
@@ -172,7 +179,8 @@ QDBusPendingCallWatcher* HarbourTransferMethodsModel::Private::checkTransferMeth
     return watcher;
 }
 
-QDBusPendingCallWatcher* HarbourTransferMethodsModel::Private::requestTransferMethods()
+QDBusPendingCallWatcher*
+HarbourTransferMethodsModel::Private::requestTransferMethods()
 {
     QDBusPendingCallWatcher* watcher = new QDBusPendingCallWatcher
         (iTransferEngine->transferMethods(), this);
@@ -181,7 +189,8 @@ QDBusPendingCallWatcher* HarbourTransferMethodsModel::Private::requestTransferMe
     return watcher;
 }
 
-QDBusPendingCallWatcher* HarbourTransferMethodsModel::Private::requestTransferMethods2()
+QDBusPendingCallWatcher*
+HarbourTransferMethodsModel::Private::requestTransferMethods2()
 {
     QDBusPendingCallWatcher* watcher = new QDBusPendingCallWatcher
         (iTransferEngine->transferMethods2(), this);
@@ -190,7 +199,9 @@ QDBusPendingCallWatcher* HarbourTransferMethodsModel::Private::requestTransferMe
     return watcher;
 }
 
-void HarbourTransferMethodsModel::Private::onTransferMethodsCheckFinished(QDBusPendingCallWatcher* aWatch)
+void
+HarbourTransferMethodsModel::Private::onTransferMethodsCheckFinished(
+    QDBusPendingCallWatcher* aWatch)
 {
     QDBusPendingReply<HarbourTransferMethodInfo2List> reply(*aWatch);
     HASSERT(aWatch == iUpdateWatcher);
@@ -204,12 +215,16 @@ void HarbourTransferMethodsModel::Private::onTransferMethodsCheckFinished(QDBusP
             requestUpdate();
         }
     } else {
+        iValid = true;  // Mark the model as valid
         setTransferMethods2(reply.value());
+        Q_EMIT parentModel()->validChanged();
     }
     aWatch->deleteLater();
 }
 
-void HarbourTransferMethodsModel::Private::onTransferMethods2Finished(QDBusPendingCallWatcher* aWatch)
+void
+HarbourTransferMethodsModel::Private::onTransferMethods2Finished(
+    QDBusPendingCallWatcher* aWatch)
 {
     QDBusPendingReply<HarbourTransferMethodInfo2List> reply(*aWatch);
     HASSERT(aWatch == iUpdateWatcher);
@@ -222,7 +237,9 @@ void HarbourTransferMethodsModel::Private::onTransferMethods2Finished(QDBusPendi
     aWatch->deleteLater();
 }
 
-void HarbourTransferMethodsModel::Private::onTransferMethodsFinished(QDBusPendingCallWatcher* aWatch)
+void
+HarbourTransferMethodsModel::Private::onTransferMethodsFinished(
+    QDBusPendingCallWatcher* aWatch)
 {
     QDBusPendingReply<HarbourTransferMethodInfoList> reply(*aWatch);
     HASSERT(aWatch == iUpdateWatcher);
@@ -241,16 +258,23 @@ void HarbourTransferMethodsModel::Private::onTransferMethodsFinished(QDBusPendin
             iMethodList = list2;
             filterModel();
         }
+        if (!iValid) {
+            iValid = true;  // Mark the model as valid
+            Q_EMIT parentModel()->validChanged();
+        }
     }
     aWatch->deleteLater();
 }
 
-QRegExp HarbourTransferMethodsModel::Private::regExp(QString aRegExp)
+QRegExp
+HarbourTransferMethodsModel::Private::regExp(
+    QString aRegExp)
 {
     return QRegExp(aRegExp, Qt::CaseInsensitive, QRegExp::Wildcard);
 }
 
-void HarbourTransferMethodsModel::Private::filterModel()
+void
+HarbourTransferMethodsModel::Private::filterModel()
 {
     QList<int> filteredList;
     if (iFilter.isEmpty() || iFilter == "*") {
@@ -289,7 +313,8 @@ void HarbourTransferMethodsModel::Private::filterModel()
     }
 }
 
-bool HarbourTransferMethodsModel::Private::showAccounts()
+bool
+HarbourTransferMethodsModel::Private::showAccounts()
 {
     bool wasPending;
     if (iShowAccountsWatcher) {
@@ -309,7 +334,9 @@ bool HarbourTransferMethodsModel::Private::showAccounts()
     return !wasPending;
 }
 
-void HarbourTransferMethodsModel::Private::onShowAccountsFinished(QDBusPendingCallWatcher* aWatch)
+void
+HarbourTransferMethodsModel::Private::onShowAccountsFinished(
+    QDBusPendingCallWatcher* aWatch)
 {
     HarbourTransferMethodsModel* model = parentModel();
     QDBusPendingReply<> reply(*aWatch);
@@ -342,12 +369,18 @@ HarbourTransferMethodsModel::~HarbourTransferMethodsModel()
 }
 
 // Callback for qmlRegisterSingletonType<HarbourTransferMethodsModel>
-QObject* HarbourTransferMethodsModel::createSingleton(QQmlEngine*, QJSEngine*)
+QObject*
+HarbourTransferMethodsModel::createSingleton(
+    QQmlEngine*,
+    QJSEngine*)
 {
     return new HarbourTransferMethodsModel();
 }
 
-bool HarbourTransferMethodsModel::loadTranslations(QTranslator* aTranslator, QLocale aLocale)
+bool
+HarbourTransferMethodsModel::loadTranslations(
+    QTranslator* aTranslator,
+    QLocale aLocale)
 {
     if (aTranslator->load(aLocale, "sailfish_transferengine_plugins", "-",
         "/usr/share/translations")) {
@@ -358,7 +391,8 @@ bool HarbourTransferMethodsModel::loadTranslations(QTranslator* aTranslator, QLo
     }
 }
 
-QHash<int,QByteArray> HarbourTransferMethodsModel::roleNames() const
+QHash<int,QByteArray>
+HarbourTransferMethodsModel::roleNames() const
 {
     QHash<int,QByteArray> roles;
     roles[Private::DisplayNameRole] = "displayName";
@@ -370,12 +404,17 @@ QHash<int,QByteArray> HarbourTransferMethodsModel::roleNames() const
     return roles;
 }
 
-int HarbourTransferMethodsModel::rowCount(const QModelIndex &) const
+int
+HarbourTransferMethodsModel::rowCount(
+    const QModelIndex&) const
 {
     return iPrivate->iFilteredList.count();
 }
 
-QVariant HarbourTransferMethodsModel::data(const QModelIndex &index, int role) const
+QVariant
+HarbourTransferMethodsModel::data(
+    const QModelIndex& index,
+    int role) const
 {
     int row = index.row();
     if (row >= 0 && row < iPrivate->iFilteredList.count()) {
@@ -400,22 +439,33 @@ QVariant HarbourTransferMethodsModel::data(const QModelIndex &index, int role) c
     return QVariant();
 }
 
-int HarbourTransferMethodsModel::count() const
+bool
+HarbourTransferMethodsModel::isValid() const
+{
+    return iPrivate->iValid;
+}
+
+int
+HarbourTransferMethodsModel::count() const
 {
     return iPrivate->iFilteredList.count();
 }
 
-bool HarbourTransferMethodsModel::accountIconSupported() const
+bool
+HarbourTransferMethodsModel::accountIconSupported() const
 {
     return iPrivate->iAccountIconSupported;
 }
 
-QString HarbourTransferMethodsModel::filter() const
+QString
+HarbourTransferMethodsModel::filter() const
 {
     return iPrivate->iFilter;
 }
 
-void HarbourTransferMethodsModel::setFilter(QString aFilter)
+void
+HarbourTransferMethodsModel::setFilter(
+    QString aFilter)
 {
     if (iPrivate->iFilter != aFilter) {
         iPrivate->iFilter = aFilter;
@@ -424,17 +474,20 @@ void HarbourTransferMethodsModel::setFilter(QString aFilter)
     }
 }
 
-bool HarbourTransferMethodsModel::showAccountsPending() const
+bool
+HarbourTransferMethodsModel::showAccountsPending() const
 {
     return iPrivate->iShowAccountsWatcher != Q_NULLPTR;
 }
 
-bool HarbourTransferMethodsModel::canShowAccounts() const
+bool
+HarbourTransferMethodsModel::canShowAccounts() const
 {
     return !iPrivate->iShowAccountsFailed;
 }
 
-void HarbourTransferMethodsModel::showAccounts()
+void
+HarbourTransferMethodsModel::showAccounts()
 {
     if (iPrivate->showAccounts()) {
         Q_EMIT showAccountsPendingChanged();

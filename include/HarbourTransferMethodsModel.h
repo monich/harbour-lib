@@ -1,6 +1,6 @@
 /*
+ * Copyright (C) 2016-2023 Slava Monich <slava@monich.com>
  * Copyright (C) 2016-2020 Jolla Ltd.
- * Copyright (C) 2016-2020 Slava Monich <slava.monich@jolla.com>
  *
  * You may use this file under the terms of the BSD license as follows:
  *
@@ -42,7 +42,13 @@ class QTranslator;
 class QQmlEngine;
 class QJSEngine;
 
-class HarbourTransferMethodsModel: public QAbstractListModel
+// N.B. This model (and in-process sharing in general) doesn't
+// work since Sailfish OS 4.2.0 (or more specifically, since
+// declarative-transferengine-qt5 package >= 0.4.0)
+//
+// It can only be of interest to those who want to make their
+// apps compatible with older releases of Sailfish OS.
+class HarbourTransferMethodsModel : public QAbstractListModel
 {
     Q_OBJECT
     Q_PROPERTY(int count READ count NOTIFY countChanged)
@@ -50,19 +56,21 @@ class HarbourTransferMethodsModel: public QAbstractListModel
     Q_PROPERTY(bool accountIconSupported READ accountIconSupported NOTIFY accountIconSupportedChanged)
     Q_PROPERTY(bool showAccountsPending READ showAccountsPending NOTIFY showAccountsPendingChanged)
     Q_PROPERTY(bool canShowAccounts READ canShowAccounts NOTIFY canShowAccountsChanged)
+    Q_PROPERTY(bool valid READ isValid NOTIFY validChanged)
 
 public:
     explicit HarbourTransferMethodsModel(QObject* aParent = Q_NULLPTR);
-    ~HarbourTransferMethodsModel();
+    ~HarbourTransferMethodsModel() Q_DECL_OVERRIDE;
 
     // Callback for qmlRegisterSingletonType<HarbourTransferMethodsModel>
-    static QObject* createSingleton(QQmlEngine* aEngine, QJSEngine* aScript);
+    static QObject* createSingleton(QQmlEngine*, QJSEngine*);
 
-    static bool loadTranslations(QTranslator* aTranslator, QLocale aLocale);
+    static bool loadTranslations(QTranslator*, QLocale);
 
+    bool isValid() const;
     int count() const;
     QString filter() const;
-    void setFilter(QString filter);
+    void setFilter(QString);
     bool accountIconSupported() const;
     bool showAccountsPending() const;
     bool canShowAccounts() const;
@@ -71,10 +79,11 @@ public:
 
     // QAbstractListModel
     QHash<int,QByteArray> roleNames() const Q_DECL_OVERRIDE;
-    int rowCount(const QModelIndex& aParent) const Q_DECL_OVERRIDE;
-    QVariant data(const QModelIndex& aIndex, int aRole) const Q_DECL_OVERRIDE;
+    int rowCount(const QModelIndex&) const Q_DECL_OVERRIDE;
+    QVariant data(const QModelIndex&, int) const Q_DECL_OVERRIDE;
 
 Q_SIGNALS:
+    void validChanged();
     void countChanged();
     void filterChanged();
     void accountIconSupportedChanged();
