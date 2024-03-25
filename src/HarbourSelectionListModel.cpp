@@ -82,6 +82,7 @@ public:
     bool isSelectableRow(int) const;
     int findSelectedRow(int) const;
     int findRole(const QString&) const;
+    QVariantList selectedValues(const QString&) const;
     void updateCounts();
     void selectRow(int);
     void unselectRow(int);
@@ -234,14 +235,34 @@ HarbourSelectionListModel::Private::findRole(
         const QByteArray roleName(aRole.toUtf8());
         QHashIterator<int,QByteArray> roles(parentModel()->roleNames());
         while (roles.hasNext()) {
-            roles.next();
-            if (roles.value() == roleName) {
+            if (roles.next().value() == roleName) {
                 return roles.key();
             }
         }
         HDEBUG("Unknown role" << aRole);
     }
     return -1;
+}
+
+QVariantList
+HarbourSelectionListModel::Private::selectedValues(
+    const QString& aRole) const
+{
+    QVariantList values;
+    const int n = iSelectedRows.count();
+    if (n > 0) {
+        const int role = findRole(aRole);
+        if (role >= 0) {
+            HarbourSelectionListModel* model = parentModel();
+            values.reserve(n);
+            for (int i = 0; i < n; i++) {
+                const int row = iSelectedRows.at(i);
+                values.append(model->data(model->index(row, 0), role));
+            }
+        }
+    }
+    HDEBUG(aRole << values);
+    return values;
 }
 
 void
@@ -452,7 +473,7 @@ HarbourSelectionListModel::Private::setNonSelectableRows(
         iNonSelectableRows = aRows;
         queueSignal(SignalNonSelectableRowsChanged);
 
-        // Sort and remove regatives and duplicates
+        // Sort and remove negatives and duplicates
         iNormalizedNonSelectableRows.clear();
         iNormalizedNonSelectableRows.reserve(aRows.count());
 
@@ -550,19 +571,7 @@ QVariantList
 HarbourSelectionListModel::selectedValues(
     QString aRole) const
 {
-    QVariantList values;
-    const int n = iPrivate->iSelectedRows.count();
-    if (n > 0) {
-        const int role = iPrivate->findRole(aRole);
-        if (role >= 0) {
-            values.reserve(n);
-            for (int i = 0; i < n; i++) {
-                values.append(data(index(iPrivate->iSelectedRows.at(i), 0), role));
-            }
-        }
-    }
-    HDEBUG(aRole << values);
-    return values;
+    return iPrivate->selectedValues(aRole);
 }
 
 Qt::ItemFlags
