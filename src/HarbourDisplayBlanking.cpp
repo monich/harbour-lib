@@ -1,6 +1,6 @@
 /*
+ * Copyright (C) 2015-2024 Slava Monich <slava@monich.com>
  * Copyright (C) 2015-2019 Jolla Ltd.
- * Copyright (C) 2015-2019 Slava Monich <slava.monich@jolla.com>
  *
  * You may use this file under the terms of the BSD license as follows:
  *
@@ -8,34 +8,38 @@
  * modification, are permitted provided that the following conditions
  * are met:
  *
- *   1. Redistributions of source code must retain the above copyright
- *      notice, this list of conditions and the following disclaimer.
- *   2. Redistributions in binary form must reproduce the above copyright
- *      notice, this list of conditions and the following disclaimer
- *      in the documentation and/or other materials provided with the
- *      distribution.
- *   3. Neither the names of the copyright holders nor the names of its
- *      contributors may be used to endorse or promote products derived
- *      from this software without specific prior written permission.
+ *  1. Redistributions of source code must retain the above copyright
+ *     notice, this list of conditions and the following disclaimer.
+ *
+ *  2. Redistributions in binary form must reproduce the above copyright
+ *     notice, this list of conditions and the following disclaimer
+ *     in the documentation and/or other materials provided with the
+ *     distribution.
+ *
+ *  3. Neither the names of the copyright holders nor the names of its
+ *     contributors may be used to endorse or promote products derived
+ *     from this software without specific prior written permission.
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
  * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * HOLDERS OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
  * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
  * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
  * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ * The views and conclusions contained in the software and documentation
+ * are those of the authors and should not be interpreted as representing
+ * any official policies, either expressed or implied.
  */
 
 #include "HarbourDisplayBlanking.h"
 #include "HarbourDebug.h"
 #include "HarbourMce.h"
-
-#include <QQmlEngine>
 
 #include <QDBusMessage>
 #include <QDBusConnection>
@@ -52,7 +56,11 @@ class HarbourDisplayBlanking::Private : public HarbourMce {
     Q_OBJECT
 
 public:
-    static const int REPEAT_INTERVAL_SEC = 50;
+    enum {
+        MIN_REPEAT_INTERVAL_SEC = 1,
+        DEFAULT_REPEAT_INTERVAL_SEC = 50
+    };
+
     static const QString BLANK_ACTIVE;
     static const QString BLANK_INACTIVE;
     static QWeakPointer<HarbourDisplayBlanking> sSharedInstance;
@@ -61,16 +69,18 @@ public:
     bool iPauseAllowed;
     bool iPauseRequested;
     bool iPauseActive;
+    int iRequestIntervalSec;
     QTimer* iRepeatTimer;
 
-    Private(HarbourDisplayBlanking* aParent);
+    Private(HarbourDisplayBlanking*);
 
-    void setPauseRequested(bool aValue);
+    void setPauseRequested(bool);
+    void setRequestInterval(int);
 
 private:
     HarbourDisplayBlanking* parentObject() const;
-    void updateDisplayBlankingPause(QString aState);
-    void updateDisplayBlankingAllowed(bool aAllowed);
+    void updateDisplayBlankingPause(QString);
+    void updateDisplayBlankingAllowed(bool);
     void checkPause();
     void requestPause();
     void cancelPause();
@@ -94,7 +104,8 @@ HarbourDisplayBlanking::Private::Private(
     iPauseAllowed(false),
     iPauseRequested(false),
     iPauseActive(false),
-    iRepeatTimer(Q_NULLPTR)
+    iRequestIntervalSec(DEFAULT_REPEAT_INTERVAL_SEC),
+    iRepeatTimer(NULL)
 {
     HDEBUG("created");
     setupProperty("get_display_blanking_pause", "display_blanking_pause_ind",
@@ -191,6 +202,24 @@ HarbourDisplayBlanking::Private::setPauseRequested(
 }
 
 void
+HarbourDisplayBlanking::Private::setRequestInterval(
+    int aValue)
+{
+    const int interval = qMax(int(MIN_REPEAT_INTERVAL_SEC), aValue);
+    if (iRequestIntervalSec != interval) {
+        iRequestIntervalSec = interval;
+        HDEBUG(interval);
+        if (iRepeatTimer) {
+            iRepeatTimer->setInterval(interval * 1000);
+            if (iRepeatTimer->isActive()) {
+                iRepeatTimer->start();
+            }
+        }
+        Q_EMIT parentObject()->requestIntervalChanged();
+    }
+}
+
+void
 HarbourDisplayBlanking::Private::checkPause()
 {
     const bool active = iPauseRequested && iPauseAllowed;
@@ -200,7 +229,7 @@ HarbourDisplayBlanking::Private::checkPause()
         if (iPauseActive) {
             if (!iRepeatTimer) {
                 iRepeatTimer = new QTimer(this);
-                iRepeatTimer->setInterval(REPEAT_INTERVAL_SEC * 1000);
+                iRepeatTimer->setInterval(iRequestIntervalSec * 1000);
                 iRepeatTimer->setSingleShot(false);
                 connect(iRepeatTimer, SIGNAL(timeout()),
                     SLOT(onRepeatBlankingRequest()));
@@ -292,9 +321,24 @@ HarbourDisplayBlanking::pauseRequested() const
 }
 
 void
-HarbourDisplayBlanking::setPauseRequested(bool aValue)
+HarbourDisplayBlanking::setPauseRequested(
+    bool aValue)
 {
     iPrivate->setPauseRequested(aValue);
+}
+
+int
+HarbourDisplayBlanking::requestInterval() const
+{
+    return iPrivate->iRequestIntervalSec;
+}
+
+void
+HarbourDisplayBlanking::setRequestInterval(
+    int aValue)
+{
+    return iPrivate->setRequestInterval(aValue);
+
 }
 
 #include "HarbourDisplayBlanking.moc"
