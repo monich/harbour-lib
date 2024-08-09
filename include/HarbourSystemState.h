@@ -41,7 +41,8 @@
 class QQmlEngine;
 class QJSEngine;
 
-class HarbourSystemState: public QObject
+class HarbourSystemState :
+    public QObject
 {
     Q_OBJECT
     Q_PROPERTY(QString displayStatus READ displayStatus NOTIFY displayStatusChanged)
@@ -63,11 +64,11 @@ public:
     static const QString MCE_TK_UNLOCKED;
 
 public:
-    explicit HarbourSystemState(QObject* aParent = Q_NULLPTR);
+    explicit HarbourSystemState(QObject* aParent = NULL);
     ~HarbourSystemState();
 
     // Callback for qmlRegisterSingletonType<HarbourSystemState>
-    static QObject* createSingleton(QQmlEngine* aEngine, QJSEngine* aScript);
+    static QObject* createSingleton(QQmlEngine*, QJSEngine*);
     static QSharedPointer<HarbourSystemState> sharedInstance();
 
     QString displayStatus() const;
