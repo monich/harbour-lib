@@ -1,6 +1,6 @@
 /*
+ * Copyright (C) 2017-2024 Slava Monich <slava@monich.com>
  * Copyright (C) 2017-2021 Jolla Ltd.
- * Copyright (C) 2017-2021 Slava Monich <slava.monich@jolla.com>
  *
  * You may use this file under the terms of the BSD license as follows:
  *
@@ -8,15 +8,17 @@
  * modification, are permitted provided that the following conditions
  * are met:
  *
- *   1. Redistributions of source code must retain the above copyright
- *      notice, this list of conditions and the following disclaimer.
- *   2. Redistributions in binary form must reproduce the above copyright
- *      notice, this list of conditions and the following disclaimer
- *      in the documentation and/or other materials provided with the
- *      distribution.
- *   3. Neither the names of the copyright holders nor the names of its
- *      contributors may be used to endorse or promote products derived
- *      from this software without specific prior written permission.
+ *  1. Redistributions of source code must retain the above copyright
+ *     notice, this list of conditions and the following disclaimer.
+ *
+ *  2. Redistributions in binary form must reproduce the above copyright
+ *     notice, this list of conditions and the following disclaimer
+ *     in the documentation and/or other materials provided with the
+ *     distribution.
+ *
+ *  3. Neither the names of the copyright holders nor the names of its
+ *     contributors may be used to endorse or promote products derived
+ *     from this software without specific prior written permission.
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
@@ -29,9 +31,17 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ * The views and conclusions contained in the software and documentation
+ * are those of the authors and should not be interpreted as representing
+ * any official policies, either expressed or implied.
  */
 
 #include "HarbourPluginLoader.h"
+
+// The whole hack is Qt5 specific (and hopelessly deprecated)
+#if QT_VERSION >= QT_VERSION_CHECK(5,0,0)
+
 #include "HarbourSystem.h"
 #include "HarbourDebug.h"
 
@@ -41,8 +51,6 @@
 #include <QMap>
 #include <QJSEngine>
 #include <QQmlError>
-
-#if QT_VERSION >= 0x050000
 
 // Unprotect QQmlEngine::d_func
 #define private public
@@ -54,6 +62,8 @@
 #include <QQmlComponent>
 
 #include <dlfcn.h>
+
+QT_WARNING_DISABLE_DEPRECATED
 
 // This hack allows (in most cases) to use prohibited QML imports by
 // re-registering them under a different name
@@ -182,7 +192,7 @@ HarbourPluginLoader::LibQt5Qml::LibQt5Qml() :
 
 class HarbourPluginLoader::Private {
 public:
-    Private(QQmlEngine* aEngine, QString aModule, int aMajor, int aMinor);
+    Private(QQmlEngine*, const QString&, int, int);
 
     QQmlType* qmlType(QString aName);
 
@@ -208,7 +218,7 @@ const HarbourPluginLoader::LibQt5Qml HarbourPluginLoader::Private::gLibQt5Qml;
 
 HarbourPluginLoader::Private::Private(
     QQmlEngine* aEngine,
-    QString aModule,
+    const QString& aModule,
     int aMajor,
     int aMinor) :
     iEngine(aEngine),
@@ -327,8 +337,6 @@ HarbourPluginLoader::Private::reRegisterType(
     }
 }
 
-#endif // QT_VERSION >= 0x050000
-
 // ==========================================================================
 // HarbourPluginLoader
 // ==========================================================================
@@ -337,15 +345,9 @@ HarbourPluginLoader::HarbourPluginLoader(
     QQmlEngine* aEngine,
     QString aModule,
     int aMajor,
-    int aMinor)
-{
-#if QT_VERSION >= 0x050000
-    iPrivate = new Private(aEngine, aModule, aMajor, aMinor);
-#else
-    iPrivate = NULL;
-#pragma message "HarbourPluginLoader only supports Qt5"
-#endif
-}
+    int aMinor) :
+    iPrivate(new Private(aEngine, aModule, aMajor, aMinor))
+{}
 
 HarbourPluginLoader::~HarbourPluginLoader()
 {
@@ -359,10 +361,8 @@ HarbourPluginLoader::reRegisterType(
     int aMajor,
     int aMinor)
 {
-#if QT_VERSION >= 0x050000
     // Re-register with the same type name (in different module)
     iPrivate->reRegisterType(aQmlName, aModule, aMajor, aMinor);
-#endif
 }
 
 void HarbourPluginLoader::reRegisterType(
@@ -372,18 +372,16 @@ void HarbourPluginLoader::reRegisterType(
     int aMajor,
     int aMinor)
 {
-#if QT_VERSION >= 0x050000
     // Re-register with a different type name (and a module)
     iPrivate->reRegisterType(aOrigName, aNewName, aModule, aMajor, aMinor);
-#endif
 }
 
 bool
 HarbourPluginLoader::isValid() const
 {
-#if QT_VERSION >= 0x050000
     return iPrivate->iLoaded;
-#else
-    return false;
-#endif
 }
+
+#else  // QT_VERSION >= QT_VERSION_CHECK(5,0,0)
+#pragma message "HarbourPluginLoader only supports Qt5"
+#endif
