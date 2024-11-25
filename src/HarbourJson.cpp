@@ -1,6 +1,6 @@
 /*
+ * Copyright (C) 2015-2024 Slava Monich <slava@monich.com>
  * Copyright (C) 2015-2020 Jolla Ltd.
- * Copyright (C) 2015-2020 Slava Monich <slava@monich.com>
  *
  * You may use this file under the terms of the BSD license as follows:
  *
@@ -8,15 +8,17 @@
  * modification, are permitted provided that the following conditions
  * are met:
  *
- *   1. Redistributions of source code must retain the above copyright
- *      notice, this list of conditions and the following disclaimer.
- *   2. Redistributions in binary form must reproduce the above copyright
- *      notice, this list of conditions and the following disclaimer
- *      in the documentation and/or other materials provided with the
- *      distribution.
- *   3. Neither the names of the copyright holders nor the names of its
- *      contributors may be used to endorse or promote products derived
- *      from this software without specific prior written permission.
+ *  1. Redistributions of source code must retain the above copyright
+ *     notice, this list of conditions and the following disclaimer.
+ *
+ *  2. Redistributions in binary form must reproduce the above copyright
+ *     notice, this list of conditions and the following disclaimer
+ *     in the documentation and/or other materials provided with the
+ *     distribution.
+ *
+ *  3. Neither the names of the copyright holders nor the names of its
+ *     contributors may be used to endorse or promote products derived
+ *     from this software without specific prior written permission.
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
@@ -38,13 +40,13 @@
 #include "HarbourJson.h"
 #include "HarbourDebug.h"
 
-#include <QDir>
-#include <QFile>
-#include <QFileInfo>
+#include <QtCore/QDir>
+#include <QtCore/QFile>
+#include <QtCore/QFileInfo>
 
-#if QT_VERSION >= 0x050000
-#  include <QJsonDocument>
-#  include <QJsonObject>
+#if QT_VERSION >= QT_VERSION_CHECK(5,0,0)
+#  include <QtCore/QJsonDocument>
+#  include <QtCore/QJsonObject>
 #else
 #  include <qjson/parser.h>
 #  include <qjson/serializer.h>
@@ -55,9 +57,12 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
-bool HarbourJson::save(const QString& aPath, const QVariantMap& aMap)
+bool
+HarbourJson::save(
+    const QString& aPath,
+    const QVariantMap& aMap)
 {
-    QFileInfo file(aPath);
+    const QFileInfo file(aPath);
     QDir dir(file.dir());
     if (dir.mkpath(dir.absolutePath())) {
         const QString absPath(file.absoluteFilePath());
@@ -69,7 +74,7 @@ bool HarbourJson::save(const QString& aPath, const QVariantMap& aMap)
             const bool haveFileAttr = (stat(path, &st) == 0);
 
             if (f.open(QIODevice::WriteOnly)) {
-                bool ok;
+                bool ok = false;
 #if QT_VERSION >= 0x050000
                 if (f.write(QJsonDocument::fromVariant(aMap).toJson()) >= 0) {
                     ok = true;
@@ -115,7 +120,10 @@ bool HarbourJson::save(const QString& aPath, const QVariantMap& aMap)
     return false;
 }
 
-bool HarbourJson::load(const QString& aPath, QVariantMap& aRoot)
+bool
+HarbourJson::load(
+    const QString& aPath,
+    QVariantMap& aRoot)
 {
     QFile f(aPath);
     if (f.exists()) {
