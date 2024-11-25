@@ -45,6 +45,12 @@
 #include <QtQml/QQmlContext>
 #include <QtQuick/QQuickImageProvider>
 
+#if QT_VERSION >= QT_VERSION_CHECK(5,5,0)
+#  define qStringPrintf(format...) (QString::asprintf(format))
+#else
+#  define qStringPrintf(format...) (QString().sprintf(format))
+#endif
+
 // ==========================================================================
 // HarbourSingleImageProvider::ImageProvider
 // ==========================================================================
@@ -147,7 +153,7 @@ void
 HarbourSingleImageProvider::Private::registerProvider()
 {
     QQmlImageProviderBase* provider = new ImageProvider(iImage);
-    iId = QString().sprintf("HarbourSingleImageProvider%p", provider);
+    iId = qStringPrintf("HarbourSingleImageProvider%p", provider);
     iSourceUri = QString("image://%1/%2").arg(iId, ImageProvider::IMAGE_NAME);
     HDEBUG("registering provider" << iId);
     iEngine->addImageProvider(iId, provider);

@@ -1,6 +1,6 @@
 /*
+ * Copyright (C) 2018-2024 Slava Monich <slava@monich.com>
  * Copyright (C) 2018-2019 Jolla Ltd.
- * Copyright (C) 2018-2019 Slava Monich <slava@monich.com>
  *
  * You may use this file under the terms of the BSD license as follows:
  *
@@ -8,52 +8,65 @@
  * modification, are permitted provided that the following conditions
  * are met:
  *
- *   1. Redistributions of source code must retain the above copyright
- *      notice, this list of conditions and the following disclaimer.
- *   2. Redistributions in binary form must reproduce the above copyright
- *      notice, this list of conditions and the following disclaimer
- *      in the documentation and/or other materials provided with the
- *      distribution.
- *   3. Neither the names of the copyright holders nor the names of its
- *      contributors may be used to endorse or promote products derived
- *      from this software without specific prior written permission.
+ *  1. Redistributions of source code must retain the above copyright
+ *     notice, this list of conditions and the following disclaimer.
+ *
+ *  2. Redistributions in binary form must reproduce the above copyright
+ *     notice, this list of conditions and the following disclaimer
+ *     in the documentation and/or other materials provided with the
+ *     distribution.
+ *
+ *  3. Neither the names of the copyright holders nor the names of its
+ *     contributors may be used to endorse or promote products derived
+ *     from this software without specific prior written permission.
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
  * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * HOLDERS OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
  * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
  * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
  * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ * The views and conclusions contained in the software and documentation
+ * are those of the authors and should not be interpreted as representing
+ * any official policies, either expressed or implied.
  */
 
 #include "HarbourImageProvider.h"
 #include "HarbourTheme.h"
 #include "HarbourDebug.h"
 
-#include <QImageReader>
-#include <QQuickWindow>
+#include <QtGui/QImageReader>
+#include <QtQuick/QQuickWindow>
+
+#if QT_VERSION >= QT_VERSION_CHECK(5,15,0)
+#  define qImageSizeInBytes(image) ((image).sizeInBytes())
+#else
+#  define qImageSizeInBytes(image) size_t((image).byteCount())
+#endif
 
 // ==========================================================================
 // HarbourImageProvider::TextureFactory
 // ==========================================================================
 
-class HarbourImageProvider::TextureFactory : public QQuickTextureFactory
+class HarbourImageProvider::TextureFactory :
+    public QQuickTextureFactory
 {
 public:
-    TextureFactory(QString aPath, QSize requestedSize);
+    TextureFactory(const QString&, const QSize&);
 
-    QSGTexture* createTexture(QQuickWindow* aWindow) const Q_DECL_OVERRIDE;
+    QSGTexture* createTexture(QQuickWindow*) const Q_DECL_OVERRIDE;
     QSize textureSize() const Q_DECL_OVERRIDE;
     int textureByteCount() const Q_DECL_OVERRIDE;
     QImage image() const Q_DECL_OVERRIDE;
 
     QImage load() const;
-    static QImage colorize(QImage aImage, QColor aColor);
+    static QImage colorize(QImage, const QColor&);
 
 private:
     QString iPath;
@@ -64,8 +77,8 @@ private:
 };
 
 HarbourImageProvider::TextureFactory::TextureFactory(
-    QString aPath,
-    QSize aRequestedSize) :
+    const QString& aPath,
+    const QSize& aRequestedSize) :
     iRequestedSize(aRequestedSize)
 {
     const int sep1 = aPath.lastIndexOf('?');
@@ -167,7 +180,7 @@ HarbourImageProvider::TextureFactory::createTexture(
 QImage
 HarbourImageProvider::TextureFactory::colorize(
     QImage aImage,
-    QColor aColor)
+    const QColor& aColor)
 {
     QImage::Format format = aImage.format();
     switch (format) {
@@ -182,7 +195,7 @@ HarbourImageProvider::TextureFactory::colorize(
 
     const QRgb rgb = aColor.rgba() & 0x00ffffff;
     QRgb* bits = (QRgb*)aImage.bits();
-    const int numPixels = aImage.byteCount()/sizeof(QRgb);
+    const int numPixels = qImageSizeInBytes(aImage)/sizeof(QRgb);
 
     if (format == QImage::Format_ARGB32) {
         for (int i=0; i<numPixels; i++) {

@@ -1,6 +1,6 @@
 ﻿/*
- * Copyright (C) 2019 Jolla Ltd.
  * Copyright (C) 2019-2024 Slava Monich <slava@monich.com>
+ * Copyright (C) 2019 Jolla Ltd.
  *
  * You may use this file under the terms of the BSD license as follows:
  *
@@ -43,6 +43,10 @@
 
 #define ROLE "selected"
 
+#if QT_VERSION >= QT_VERSION_CHECK(5,0,0)
+#  define qSort(c) std::sort((c).begin(), (c).end())
+#endif
+
 // ==========================================================================
 // HarbourSelectionListModel::Private
 // ==========================================================================
@@ -55,7 +59,8 @@
     s(SelectionCount,selectionCount) \
     s(Count,count)
 
-class HarbourSelectionListModel::Private : public QObject
+class HarbourSelectionListModel::Private :
+    public QObject
 {
     Q_OBJECT
 

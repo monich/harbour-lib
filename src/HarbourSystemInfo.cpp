@@ -1,6 +1,6 @@
 /*
+ * Copyright (C) 2020-2024 Slava Monich <slava@monich.com>
  * Copyright (C) 2020-2021 Jolla Ltd.
- * Copyright (C) 2020-2021 Slava Monich <slava@monich.com>
  *
  * You may use this file under the terms of the BSD license as follows:
  *
@@ -49,6 +49,13 @@
 #include <errno.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+
+// QString::SkipEmptyParts is deprecated since 5.15
+#if QT_VERSION >= QT_VERSION_CHECK(5,15,0)
+#  define qSkipEmptyParts Qt::SkipEmptyParts
+#else
+#  define qSkipEmptyParts QString::SkipEmptyParts
+#endif
 
 // ==========================================================================
 // HarbourSystemInfo::Private
@@ -129,7 +136,7 @@ QHash<QString,QString> HarbourSystemInfo::Private::parseFile(QString aPath, cons
 QVector<uint> HarbourSystemInfo::Private::parseVersion(QString aVersion)
 {
     QVector<uint> parsed;
-    QStringList parts(aVersion.split('.', QString::SkipEmptyParts));
+    QStringList parts(aVersion.split('.', qSkipEmptyParts));
     const int n = qMin(parts.count(),4);
     for (int i = 0; i < n; i++) {
         const QString part(parts.at(i));
