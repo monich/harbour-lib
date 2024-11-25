@@ -1,6 +1,6 @@
 /*
+ * Copyright (C) 2021-2024 Slava Monich <slava@monich.com>
  * Copyright (C) 2021 Jolla Ltd.
- * Copyright (C) 2021 Slava Monich <slava.monich@jolla.com>
  *
  * You may use this file under the terms of the BSD license as follows:
  *
@@ -8,27 +8,33 @@
  * modification, are permitted provided that the following conditions
  * are met:
  *
- *   1. Redistributions of source code must retain the above copyright
- *      notice, this list of conditions and the following disclaimer.
- *   2. Redistributions in binary form must reproduce the above copyright
- *      notice, this list of conditions and the following disclaimer
- *      in the documentation and/or other materials provided with the
- *      distribution.
- *   3. Neither the names of the copyright holders nor the names of its
- *      contributors may be used to endorse or promote products derived
- *      from this software without specific prior written permission.
+ *  1. Redistributions of source code must retain the above copyright
+ *     notice, this list of conditions and the following disclaimer.
+ *
+ *  2. Redistributions in binary form must reproduce the above copyright
+ *     notice, this list of conditions and the following disclaimer
+ *     in the documentation and/or other materials provided with the
+ *     distribution.
+ *
+ *  3. Neither the names of the copyright holders nor the names of its
+ *     contributors may be used to endorse or promote products derived
+ *     from this software without specific prior written permission.
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
  * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * HOLDERS OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
  * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
  * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
  * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ * The views and conclusions contained in the software and documentation
+ * are those of the authors and should not be interpreted as representing
+ * any official policies, either expressed or implied.
  */
 
 #include "HarbourColorEditorModel.h"
@@ -50,8 +56,8 @@ public:
 
     bool resetDragPos();
     QStringList getColors() const;
-    QList<QColor> makeColors(const QStringList& aColors, bool* aChanged) const;
-    QVariant data(int aRow, ModelRole aRole) const;
+    QList<QColor> makeColors(const QStringList&, bool*) const;
+    QVariant data(int, ModelRole) const;
 
 public:
     int iDragPos;
@@ -67,7 +73,8 @@ HarbourColorEditorModel::Private::Private() :
 {
 }
 
-bool HarbourColorEditorModel::Private::resetDragPos()
+bool
+HarbourColorEditorModel::Private::resetDragPos()
 {
     if (iDragPos >= 0) {
         iDragPos = -1;
@@ -78,7 +85,8 @@ bool HarbourColorEditorModel::Private::resetDragPos()
     }
 }
 
-QStringList HarbourColorEditorModel::Private::getColors() const
+QStringList
+HarbourColorEditorModel::Private::getColors() const
 {
     const int n = iColors.count();
     QStringList colors;
@@ -89,7 +97,10 @@ QStringList HarbourColorEditorModel::Private::getColors() const
     return colors;
 }
 
-QList<QColor> HarbourColorEditorModel::Private::makeColors(const QStringList& aColors, bool* aChanged) const
+QList<QColor>
+HarbourColorEditorModel::Private::makeColors(
+    const QStringList& aColors,
+    bool* aChanged) const
 {
     const int n = aColors.count();
     *aChanged = iColors.count() != n;
@@ -105,7 +116,10 @@ QList<QColor> HarbourColorEditorModel::Private::makeColors(const QStringList& aC
     return newColors;
 }
 
-QVariant HarbourColorEditorModel::Private::data(int aRow, ModelRole aRole) const
+QVariant
+HarbourColorEditorModel::Private::data(
+    int aRow,
+    ModelRole aRole) const
 {
     const int n = iColors.count();
     if (aRow >= 0 && aRow <= n) {
@@ -145,13 +159,20 @@ QVariant HarbourColorEditorModel::Private::data(int aRow, ModelRole aRole) const
 // HarbourColorEditorModel::Private
 // ==========================================================================
 
-HarbourColorEditorModel::HarbourColorEditorModel(QObject* aParent) :
+HarbourColorEditorModel::HarbourColorEditorModel(
+    QObject* aParent) :
     QAbstractListModel(aParent),
     iPrivate(new Private)
 {
 }
 
-QHash<int,QByteArray> HarbourColorEditorModel::roleNames() const
+HarbourColorEditorModel::~HarbourColorEditorModel()
+{
+    delete iPrivate;
+}
+
+QHash<int,QByteArray>
+HarbourColorEditorModel::roleNames() const
 {
     QHash<int,QByteArray> roles;
     roles.insert(Private::ColorRole, "color");
@@ -159,22 +180,30 @@ QHash<int,QByteArray> HarbourColorEditorModel::roleNames() const
     return roles;
 }
 
-int HarbourColorEditorModel::rowCount(const QModelIndex&) const
+int
+HarbourColorEditorModel::rowCount(
+    const QModelIndex&) const
 {
     return iPrivate->iColors.count() + 1;
 }
 
-QVariant HarbourColorEditorModel::data(const QModelIndex& aIndex, int aRole) const
+QVariant
+HarbourColorEditorModel::data(
+    const QModelIndex& aIndex,
+    int aRole) const
 {
     return iPrivate->data(aIndex.row(), (Private::ModelRole)aRole);
 }
 
-QStringList HarbourColorEditorModel::getColors() const
+QStringList
+HarbourColorEditorModel::getColors() const
 {
     return iPrivate->getColors();
 }
 
-void HarbourColorEditorModel::setColors(QStringList aColors)
+void
+HarbourColorEditorModel::setColors(
+    QStringList aColors)
 {
     bool changed;
     const QList<QColor> prevColors(iPrivate->iColors);
@@ -224,7 +253,9 @@ void HarbourColorEditorModel::setColors(QStringList aColors)
     }
 }
 
-void HarbourColorEditorModel::addColor(QColor aColor)
+void
+HarbourColorEditorModel::addColor(
+    QColor aColor)
 {
     if (aColor.isValid()) {
         const int n = iPrivate->iColors.count();
@@ -235,12 +266,15 @@ void HarbourColorEditorModel::addColor(QColor aColor)
     }
 }
 
-int HarbourColorEditorModel::getDragPos() const
+int
+HarbourColorEditorModel::getDragPos() const
 {
     return iPrivate->iDragPos;
 }
 
-void HarbourColorEditorModel::setDragPos(int aPos)
+void
+HarbourColorEditorModel::setDragPos(
+    int aPos)
 {
     const int n = iPrivate->iColors.count();
     if (aPos < 0) {
@@ -292,7 +326,9 @@ void HarbourColorEditorModel::setDragPos(int aPos)
     }
 }
 
-int HarbourColorEditorModel::indexOf(QColor aColor) const
+int
+HarbourColorEditorModel::indexOf(
+    QColor aColor) const
 {
     return iPrivate->iColors.indexOf(aColor);
 }
