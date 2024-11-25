@@ -52,7 +52,9 @@
 // HarbourDisplayBlanking::Private
 // ==========================================================================
 
-class HarbourDisplayBlanking::Private : public HarbourMce {
+class HarbourDisplayBlanking::Private :
+    public HarbourMce
+{
     Q_OBJECT
 
 public:
@@ -79,7 +81,7 @@ public:
 
 private:
     HarbourDisplayBlanking* parentObject() const;
-    void updateDisplayBlankingPause(QString);
+    void updateDisplayBlankingPause(const QString&);
     void updateDisplayBlankingAllowed(bool);
     void checkPause();
     void requestPause();
@@ -124,7 +126,7 @@ HarbourDisplayBlanking::Private::parentObject() const
 
 void
 HarbourDisplayBlanking::Private::updateDisplayBlankingPause(
-    QString aState)
+    const QString& aState)
 {
     const bool paused = (aState == BLANK_ACTIVE);
     if (iPaused != paused) {

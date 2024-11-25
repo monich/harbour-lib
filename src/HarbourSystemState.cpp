@@ -41,11 +41,9 @@
 #include "HarbourDebug.h"
 #include "HarbourMce.h"
 
-#include <QDBusMessage>
-#include <QDBusConnection>
-#include <QDBusPendingCall>
-#include <QDBusPendingCallWatcher>
-#include <QDBusPendingReply>
+#include <QtDBus/QDBusMessage>
+#include <QtDBus/QDBusPendingCallWatcher>
+#include <QtDBus/QDBusPendingReply>
 
 const QString HarbourSystemState::MCE_DISPLAY_ON("on");
 const QString HarbourSystemState::MCE_DISPLAY_DIM("dimmed");
@@ -73,8 +71,8 @@ public:
     bool locked() const;
 
 private:
-    void setDisplayStatus(QString);
-    void setLockMode(QString);
+    void setDisplayStatus(const QString&);
+    void setLockMode(const QString&);
 
 public Q_SLOTS:
     void onDisplayStatusChanged(QString);
@@ -107,7 +105,7 @@ HarbourSystemState::Private::displayOff() const
 
 void
 HarbourSystemState::Private::setDisplayStatus(
-    QString aStatus)
+    const QString& aStatus)
 {
     if (iDisplayStatus != aStatus) {
         const bool displayWasOff = displayOff();
@@ -148,7 +146,7 @@ HarbourSystemState::Private::locked() const
 
 void
 HarbourSystemState::Private::setLockMode(
-    QString aMode)
+    const QString& aMode)
 {
     if (iLockMode != aMode) {
         const bool wasLocked = locked();

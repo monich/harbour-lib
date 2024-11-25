@@ -121,7 +121,7 @@ public:
     ~Private();
 
     bool setEngine(QQmlEngine*);
-    void set(QImage, Options);
+    void set(const QImage&, Options);
     void registerProvider();
 
 public Q_SLOTS:
@@ -183,7 +183,7 @@ HarbourSingleImageProvider::Private::setEngine(
 
 void
 HarbourSingleImageProvider::Private::set(
-    QImage aImage,
+    const QImage& aImage,
     Options aOptions)
 {
     const bool mirrorHorizontally = aOptions.testFlag(MirrorHorizontally);

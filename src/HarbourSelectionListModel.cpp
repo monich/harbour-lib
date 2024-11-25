@@ -47,6 +47,10 @@
 #  define qSort(c) std::sort((c).begin(), (c).end())
 #endif
 
+#ifndef qMove
+#  define qMove(x) (x)
+#endif
+
 // ==========================================================================
 // HarbourSelectionListModel::Private
 // ==========================================================================
@@ -354,7 +358,7 @@ HarbourSelectionListModel::Private::selectAll()
 
     const QList<int> prevSelection(iSelectedRows);
     if (iSelectedRows != rows) {
-        iSelectedRows = rows;
+        iSelectedRows = qMove(rows);
         queueSignal(SignalSelectedRowsChanged);
     }
 

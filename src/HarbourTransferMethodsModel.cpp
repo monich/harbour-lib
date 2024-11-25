@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2023 Slava Monich <slava@monich.com>
+ * Copyright (C) 2016-2024 Slava Monich <slava@monich.com>
  * Copyright (C) 2016-2020 Jolla Ltd.
  *
  * You may use this file under the terms of the BSD license as follows:
@@ -8,15 +8,17 @@
  * modification, are permitted provided that the following conditions
  * are met:
  *
- *   1. Redistributions of source code must retain the above copyright
- *      notice, this list of conditions and the following disclaimer.
- *   2. Redistributions in binary form must reproduce the above copyright
- *      notice, this list of conditions and the following disclaimer
- *      in the documentation and/or other materials provided with the
- *      distribution.
- *   3. Neither the names of the copyright holders nor the names of its
- *      contributors may be used to endorse or promote products derived
- *      from this software without specific prior written permission.
+ *  1. Redistributions of source code must retain the above copyright
+ *     notice, this list of conditions and the following disclaimer.
+ *
+ *  2. Redistributions in binary form must reproduce the above copyright
+ *     notice, this list of conditions and the following disclaimer
+ *     in the documentation and/or other materials provided with the
+ *     distribution.
+ *
+ *  3. Neither the names of the copyright holders nor the names of its
+ *     contributors may be used to endorse or promote products derived
+ *     from this software without specific prior written permission.
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
@@ -29,19 +31,28 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ * The views and conclusions contained in the software and documentation
+ * are those of the authors and should not be interpreted as representing
+ * any official policies, either expressed or implied.
  */
 
 #include "HarbourTransferMethodsModel.h"
 #include "HarbourDebug.h"
 
-#include <QTranslator>
-#include <QRegExp>
+#include <QtCore/QTranslator>
+#include <QtCore/QRegExp>
+
+#ifndef qMove
+#  define qMove(x) (x)
+#endif
 
 // ==========================================================================
 // HarbourTransferMethodsModel::TransferEngine
 // ==========================================================================
 
-class HarbourTransferMethodsModel::TransferEngine : public QDBusAbstractInterface
+class HarbourTransferMethodsModel::TransferEngine :
+    public QDBusAbstractInterface
 {
     Q_OBJECT
 
@@ -65,7 +76,8 @@ Q_SIGNALS: // SIGNALS
 // HarbourTransferMethodsModel::Private
 // ==========================================================================
 
-class HarbourTransferMethodsModel::Private : public QObject
+class HarbourTransferMethodsModel::Private :
+    public QObject
 {
     Q_OBJECT
     typedef QDBusPendingCallWatcher* (Private::*RequestUpdate)();
@@ -85,7 +97,7 @@ public:
 
 public:
     HarbourTransferMethodsModel* parentModel();
-    static QRegExp regExp(QString);
+    static QRegExp regExp(const QString&);
     void filterModel();
     QDBusPendingCallWatcher* checkTransferMethods();
     QDBusPendingCallWatcher* requestTransferMethods();
@@ -113,7 +125,8 @@ public:
     TransferEngine* iTransferEngine;
 };
 
-HarbourTransferMethodsModel::Private::Private(HarbourTransferMethodsModel* aModel) :
+HarbourTransferMethodsModel::Private::Private(
+    HarbourTransferMethodsModel* aModel) :
     QObject(aModel),
     iAccountIconSupported(false),
     iRequestUpdate(&Private::checkTransferMethods),
@@ -159,7 +172,7 @@ HarbourTransferMethodsModel::Private::setTransferMethods2(
     iRequestUpdate = &Private::requestTransferMethods2;
     HDEBUG(aList.count() << "methods");
     if (iMethodList != aList) {
-        iMethodList = aList;
+        iMethodList = qMove(aList);
         filterModel();
     }
     if (!iAccountIconSupported) {
@@ -174,6 +187,7 @@ HarbourTransferMethodsModel::Private::checkTransferMethods()
     // First try transferMethods2() and see if it works
     QDBusPendingCallWatcher* watcher = new QDBusPendingCallWatcher
         (iTransferEngine->transferMethods2(), this);
+
     connect(watcher, SIGNAL(finished(QDBusPendingCallWatcher*)),
         SLOT(onTransferMethodsCheckFinished(QDBusPendingCallWatcher*)));
     return watcher;
@@ -184,6 +198,7 @@ HarbourTransferMethodsModel::Private::requestTransferMethods()
 {
     QDBusPendingCallWatcher* watcher = new QDBusPendingCallWatcher
         (iTransferEngine->transferMethods(), this);
+
     connect(watcher, SIGNAL(finished(QDBusPendingCallWatcher*)),
         SLOT(onTransferMethodsFinished(QDBusPendingCallWatcher*)));
     return watcher;
@@ -194,6 +209,7 @@ HarbourTransferMethodsModel::Private::requestTransferMethods2()
 {
     QDBusPendingCallWatcher* watcher = new QDBusPendingCallWatcher
         (iTransferEngine->transferMethods2(), this);
+
     connect(watcher, SIGNAL(finished(QDBusPendingCallWatcher*)),
         SLOT(onTransferMethods2Finished(QDBusPendingCallWatcher*)));
     return watcher;
@@ -204,6 +220,7 @@ HarbourTransferMethodsModel::Private::onTransferMethodsCheckFinished(
     QDBusPendingCallWatcher* aWatch)
 {
     QDBusPendingReply<HarbourTransferMethodInfo2List> reply(*aWatch);
+
     HASSERT(aWatch == iUpdateWatcher);
     iUpdateWatcher = Q_NULLPTR;
     if (reply.isError()) {
@@ -227,6 +244,7 @@ HarbourTransferMethodsModel::Private::onTransferMethods2Finished(
     QDBusPendingCallWatcher* aWatch)
 {
     QDBusPendingReply<HarbourTransferMethodInfo2List> reply(*aWatch);
+
     HASSERT(aWatch == iUpdateWatcher);
     iUpdateWatcher = Q_NULLPTR;
     if (reply.isError()) {
@@ -242,6 +260,7 @@ HarbourTransferMethodsModel::Private::onTransferMethodsFinished(
     QDBusPendingCallWatcher* aWatch)
 {
     QDBusPendingReply<HarbourTransferMethodInfoList> reply(*aWatch);
+
     HASSERT(aWatch == iUpdateWatcher);
     iUpdateWatcher = Q_NULLPTR;
     if (reply.isError()) {
@@ -250,12 +269,13 @@ HarbourTransferMethodsModel::Private::onTransferMethodsFinished(
         const HarbourTransferMethodInfoList list = reply.value();
         HarbourTransferMethodInfo2List list2;
         const int n = list.count();
+        list2.reserve(n);
         for (int i = 0; i < n; i++) {
             list2.append(HarbourTransferMethodInfo2(list.at(i)));
         }
         HDEBUG(n << "methods");
         if (iMethodList != list2) {
-            iMethodList = list2;
+            iMethodList = qMove(list2);
             filterModel();
         }
         if (!iValid) {
@@ -268,7 +288,7 @@ HarbourTransferMethodsModel::Private::onTransferMethodsFinished(
 
 QRegExp
 HarbourTransferMethodsModel::Private::regExp(
-    QString aRegExp)
+    const QString& aRegExp)
 {
     return QRegExp(aRegExp, Qt::CaseInsensitive, QRegExp::Wildcard);
 }
@@ -284,6 +304,7 @@ HarbourTransferMethodsModel::Private::filterModel()
         }
     } else {
         QRegExp re(regExp(iFilter));
+
         for (int i = 0; i < iMethodList.count(); i++) {
             const HarbourTransferMethodInfo2& info = iMethodList.at(i);
             for (int j = 0; j < info.capabilitities.count(); j++) {
@@ -305,7 +326,7 @@ HarbourTransferMethodsModel::Private::filterModel()
         HarbourTransferMethodsModel* model = parentModel();
         model->beginResetModel();
         const int oldCount = iFilteredList.count();
-        iFilteredList = filteredList;
+        iFilteredList = qMove(filteredList);
         if (oldCount != iFilteredList.count()) {
             Q_EMIT model->countChanged();
         }
@@ -317,6 +338,7 @@ bool
 HarbourTransferMethodsModel::Private::showAccounts()
 {
     bool wasPending;
+
     if (iShowAccountsWatcher) {
         HDEBUG("dropping pending showAccounts");
         iShowAccountsWatcher->disconnect(this);
@@ -340,6 +362,7 @@ HarbourTransferMethodsModel::Private::onShowAccountsFinished(
 {
     HarbourTransferMethodsModel* model = parentModel();
     QDBusPendingReply<> reply(*aWatch);
+
     HASSERT(aWatch == iShowAccountsWatcher);
     iShowAccountsWatcher = Q_NULLPTR;
     if (reply.isError()) {
@@ -413,14 +436,16 @@ HarbourTransferMethodsModel::rowCount(
 
 QVariant
 HarbourTransferMethodsModel::data(
-    const QModelIndex& index,
-    int role) const
+    const QModelIndex& aIndex,
+    int aRole) const
 {
-    int row = index.row();
+    int row = aIndex.row();
+
     if (row >= 0 && row < iPrivate->iFilteredList.count()) {
         const int pos = iPrivate->iFilteredList.at(row);
         const HarbourTransferMethodInfo2& info = iPrivate->iMethodList.at(pos);
-        switch (role) {
+
+        switch (aRole) {
         case Private::DisplayNameRole: {
             QString s(qApp->translate(Q_NULLPTR, qPrintable(info.displayName)));
             if (!s.isEmpty()) return s;
@@ -435,7 +460,7 @@ HarbourTransferMethodsModel::data(
         case Private::AccountIconRole: return info.accountIcon;
         }
     }
-    qWarning() << index << role;
+    qWarning() << aIndex << aRole;
     return QVariant();
 }
 
@@ -468,7 +493,7 @@ HarbourTransferMethodsModel::setFilter(
     QString aFilter)
 {
     if (iPrivate->iFilter != aFilter) {
-        iPrivate->iFilter = aFilter;
+        iPrivate->iFilter = qMove(aFilter);
         iPrivate->filterModel();
         Q_EMIT filterChanged();
     }

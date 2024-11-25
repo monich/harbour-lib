@@ -8,15 +8,17 @@
  * modification, are permitted provided that the following conditions
  * are met:
  *
- *   1. Redistributions of source code must retain the above copyright
- *      notice, this list of conditions and the following disclaimer.
- *   2. Redistributions in binary form must reproduce the above copyright
- *      notice, this list of conditions and the following disclaimer
- *      in the documentation and/or other materials provided with the
- *      distribution.
- *   3. Neither the names of the copyright holders nor the names of its
- *      contributors may be used to endorse or promote products derived
- *      from this software without specific prior written permission.
+ *  1. Redistributions of source code must retain the above copyright
+ *     notice, this list of conditions and the following disclaimer.
+ *
+ *  2. Redistributions in binary form must reproduce the above copyright
+ *     notice, this list of conditions and the following disclaimer
+ *     in the documentation and/or other materials provided with the
+ *     distribution.
+ *
+ *  3. Neither the names of the copyright holders nor the names of its
+ *     contributors may be used to endorse or promote products derived
+ *     from this software without specific prior written permission.
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
@@ -38,11 +40,10 @@
 #include "HarbourSystemInfo.h"
 #include "HarbourDebug.h"
 
-#include <QHash>
-#include <QVector>
-#include <QStringList>
-#include <QFile>
-#include <QTextStream>
+#include <QtCore/QFile>
+#include <QtCore/QHash>
+#include <QtCore/QStringList>
+#include <QtCore/QTextStream>
 
 #include <stdlib.h>
 #include <unistd.h>
@@ -70,13 +71,13 @@ public:
 public:
     Private();
 
-    static QHash<QString,QString> parseFile(QString aFileName, const QStringList aKeys);
-    static QHash<QString,QString> parseOsRelease(const QStringList aKeys);
-    static QVector<uint> parseVersion(QString aVersion);
-    static int compareVersions(const QVector<uint> aVersion1, const QVector<uint> aVersion2);
-    static int compareVersions(const QVector<uint> aVersion1, const QString aVersion2);
+    static QHash<QString,QString> parseFile(const QString&, const QStringList&);
+    static QHash<QString,QString> parseOsRelease(const QStringList&);
+    static QVector<uint> parseVersion(const QString&);
+    static int compareVersions(const QVector<uint>&, const QVector<uint>&);
+    static int compareVersions(const QVector<uint>&, const QString&);
 
-    QString getPackageVersion(QString aPackage);
+    QString getPackageVersion(const QString&);
 
 public:
     QString iName;
@@ -100,12 +101,18 @@ HarbourSystemInfo::Private::Private()
     iParsedVersion = parseVersion(iVersion);
 }
 
-inline QHash<QString,QString> HarbourSystemInfo::Private::parseOsRelease(const QStringList aKeys)
+inline
+QHash<QString,QString>
+HarbourSystemInfo::Private::parseOsRelease(
+    const QStringList& aKeys)
 {
     return parseFile("/etc/os-release", aKeys);
 }
 
-QHash<QString,QString> HarbourSystemInfo::Private::parseFile(QString aPath, const QStringList aKeys)
+QHash<QString,QString>
+HarbourSystemInfo::Private::parseFile(
+    const QString& aPath,
+    const QStringList& aKeys)
 {
     QFile file(aPath);
     QHash<QString,QString> result;
@@ -133,7 +140,9 @@ QHash<QString,QString> HarbourSystemInfo::Private::parseFile(QString aPath, cons
     return result;
 }
 
-QVector<uint> HarbourSystemInfo::Private::parseVersion(QString aVersion)
+QVector<uint>
+HarbourSystemInfo::Private::parseVersion(
+    const QString& aVersion)
 {
     QVector<uint> parsed;
     QStringList parts(aVersion.split('.', qSkipEmptyParts));
@@ -151,8 +160,10 @@ QVector<uint> HarbourSystemInfo::Private::parseVersion(QString aVersion)
     return parsed;
 }
 
-int HarbourSystemInfo::Private::compareVersions(const QVector<uint> aVersion1,
-    const QVector<uint> aVersion2)
+int
+HarbourSystemInfo::Private::compareVersions(
+    const QVector<uint>& aVersion1,
+    const QVector<uint>& aVersion2)
 {
     const int n1 = aVersion1.size();
     const int n2 = aVersion2.size();
@@ -169,13 +180,18 @@ int HarbourSystemInfo::Private::compareVersions(const QVector<uint> aVersion1,
     return (n1 > n2) ? 1 : (n1 < n2) ? -1 : 0;
 }
 
-inline int HarbourSystemInfo::Private::compareVersions(const QVector<uint> aVersion1,
-    const QString aVersion2)
+inline
+int
+HarbourSystemInfo::Private::compareVersions(
+    const QVector<uint>& aVersion1,
+    const QString& aVersion2)
 {
     return compareVersions(aVersion1, Private::parseVersion(aVersion2));
 }
 
-QString HarbourSystemInfo::Private::getPackageVersion(QString aPackage)
+QString
+HarbourSystemInfo::Private::getPackageVersion(
+    const QString& aPackage)
 {
     QString version;
     if (!aPackage.isEmpty()) {
@@ -194,9 +210,10 @@ QString HarbourSystemInfo::Private::getPackageVersion(QString aPackage)
 // HarbourSystemInfo
 // ==========================================================================
 
-HarbourSystemInfo::HarbourSystemInfo(QObject* aParent) :
+HarbourSystemInfo::HarbourSystemInfo(
+    QObject* aParent) :
     QObject(aParent),
-    iPrivate(new Private)
+    iPrivate(new Private())
 {
     HDEBUG("created");
 }
@@ -208,45 +225,61 @@ HarbourSystemInfo::~HarbourSystemInfo()
 }
 
 // Callback for qmlRegisterSingletonType<HarbourSystemInfo>
-QObject* HarbourSystemInfo::createSingleton(QQmlEngine*, QJSEngine*)
+QObject*
+HarbourSystemInfo::createSingleton(
+    QQmlEngine*,
+    QJSEngine*)
 {
     return new HarbourSystemInfo(); // Singleton doesn't need a parent
 }
 
-QString HarbourSystemInfo::osName() const
+QString
+HarbourSystemInfo::osName() const
 {
     return iPrivate->iName;
 }
 
-QString HarbourSystemInfo::osVersion() const
+QString
+HarbourSystemInfo::osVersion() const
 {
     return iPrivate->iVersion;
 }
 
-QString HarbourSystemInfo::packageVersion(QString aPackage)
+QString
+HarbourSystemInfo::packageVersion(
+    QString aPackage)
 {
     return iPrivate->getPackageVersion(aPackage);
 }
 
-int HarbourSystemInfo::osVersionCompare(QString aVersion)
+int
+HarbourSystemInfo::osVersionCompare(
+    QString aVersion)
 {
     return Private::compareVersions(iPrivate->iParsedVersion, aVersion);
 }
 
-int HarbourSystemInfo::osVersionCompareWith(QString aVersion)
+int
+HarbourSystemInfo::osVersionCompareWith(
+    QString aVersion)
 {
     const QStringList keys(Private::VERSION_ID);
     const QString os(Private::parseOsRelease(keys).value(Private::VERSION_ID));
     return Private::compareVersions(Private::parseVersion(os), aVersion);
 }
 
-int HarbourSystemInfo::compareVersions(QString aVersion1, QString aVersion2)
+int
+HarbourSystemInfo::compareVersions(
+    QString aVersion1,
+    QString aVersion2)
 {
     return Private::compareVersions(Private::parseVersion(aVersion1),
         Private::parseVersion(aVersion2));
 }
 
-QString HarbourSystemInfo::queryPackageVersion(QString aPackage)
+QString
+HarbourSystemInfo::queryPackageVersion(
+    QString aPackage)
 {
     QString version;
     int fds[2];
