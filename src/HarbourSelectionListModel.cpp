@@ -116,6 +116,8 @@ public:
 HarbourSelectionListModel::Private::Private(
     HarbourSelectionListModel* aParent) :
     QObject(aParent),
+    iQueuedSignals(0),
+    iFirstQueuedSignal(SignalCount),
     iLastKnownSelectableCount(0),
     iLastKnownCount(0)
 {
