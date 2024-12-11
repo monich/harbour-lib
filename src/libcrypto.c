@@ -71,7 +71,7 @@
  */
 
 #ifndef LIBDIR
-#  ifdef __aarch64__
+#  if defined(__aarch64__) || defined(__amd64__)
 #    define LIBDIR "/usr/lib64"
 #  else
 #    define LIBDIR "/usr/lib"
