@@ -265,12 +265,12 @@ libcrypto_load(void)
                     if (G_LIKELY(f)) {
                         libcrypto.fn.entry[i] = f;
                     } else {
-                        GINFO("%s not found", fn);
+                        GWARN("%s not found", fn);
                     }
                 }
                 break;
             } else {
-                GWARN("%s not found", lib);
+                GERR("%s not found", lib);
             }
         }
         failed = !libcrypto.handle;
