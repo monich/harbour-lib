@@ -39,6 +39,7 @@
 
 #include "gutil_log.h"
 
+#define __USE_GNU
 #include <dlfcn.h>
 #include <stdint.h>
 
@@ -214,7 +215,9 @@
 /* Leave it up to dlopen() to figure out the directory */
 static const char* libcrypto_so_path[] = {
     "libcrypto.so.1.1",
-    "libcrypto.so.10"
+    "libcrypto.so.10",
+    "libcrypto.so",
+    0
 };
 
 static const char* libcrypto_names[] = {
@@ -255,8 +258,8 @@ libcrypto_load(void)
         for (i = 0; i < G_N_ELEMENTS(libcrypto_so_path); i++) {
             const char* lib = libcrypto_so_path[i];
 
-            libcrypto.handle = dlopen(lib, RTLD_LAZY);
-            if (libcrypto.handle) {
+            libcrypto.handle = lib ? dlopen(lib, RTLD_LAZY) : RTLD_NEXT;
+            if (libcrypto.handle || !lib) {
                 GINFO("Loaded %s", lib);
                 for (i = 0; i < G_N_ELEMENTS(libcrypto_names); i++) {
                     const char* fn = libcrypto_names[i];
