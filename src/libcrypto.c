@@ -224,6 +224,9 @@ static const char* libcrypto_names[] = {
     LIBCRYPTO_FUNCTIONS2(FN_NAME2)
 };
 
+static const char CONTROVERSIAL_ERR_load_crypto_strings[] = "ERR_load_crypto_strings";
+static const char CONTROVERSIAL_OPENSSL_init_crypto[] = "OPENSSL_init_crypto";
+
 static struct {
     void* handle;
     union {
@@ -262,15 +265,22 @@ libcrypto_load(void)
                     if (G_LIKELY(f)) {
                         libcrypto.fn.entry[i] = f;
                     } else {
-                        GWARN("%s not found", fn);
+						if (0 != strncmp(CONTROVERSIAL_ERR_load_crypto_strings, fn, G_N_ELEMENTS(CONTROVERSIAL_ERR_load_crypto_strings))
+							|| 0 != strncmp(CONTROVERSIAL_OPENSSL_init_crypto, fn, G_N_ELEMENTS(CONTROVERSIAL_OPENSSL_init_crypto))
+						) {
+	                        GWARN("%s not found", fn);
+						}
                     }
                 }
                 break;
             } else {
-                GERR("%s not found", lib);
+                GWARN("%s not found", lib);
             }
         }
         failed = !libcrypto.handle;
+        if (failed) {
+            GERR("libcrypto.so not found");
+        }
     }
 }
 
