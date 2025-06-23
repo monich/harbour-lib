@@ -48,6 +48,8 @@ Dialog {
     forwardNavigation: !hueItem.pressed
     backNavigation: !hueItem.pressed
 
+    readonly property real _landscapeWidth: Screen.height - (('topCutout' in Screen) ? Screen.topCutout.height : 0)
+
     DialogHeader {
         id: header
 
@@ -57,17 +59,9 @@ Dialog {
 
     Component.onCompleted: hexText.text = initialColor.toString().substr(1)
 
-    onIsLandscapeChanged: {
-        // In the older versions of Silica, the width was changing with a
-        // delay, causing visible and unpleasant layout changes. When the
-        // support for cutout was introduced, this hack started to break
-        // the landscape layout (with cutout enabled, the width of the page
-        // in landscape is smaller than the screen height) and at the same
-        // time, the unpleasant rotation effects seems to have gone away.
-        if (!('hasCutouts' in Screen)) {
-            width = isLandscape ? Screen.height : Screen.width
-        }
-    }
+    // Otherwise width is changing with a delay, causing visible layout changes
+    // when on-screen keyboard is active and taking part of the screen.
+    onIsLandscapeChanged: width = isLandscape ? _landscapeWidth : Screen.width
 
     SilicaFlickable {
         clip: true
