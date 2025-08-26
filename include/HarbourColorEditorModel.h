@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021-2024 Slava Monich <slava@monich.com>
+ * Copyright (C) 2021-2025 Slava Monich <slava@monich.com>
  * Copyright (C) 2021 Jolla Ltd.
  *
  * You may use this file under the terms of the BSD license as follows:
@@ -63,10 +63,10 @@ public:
     ~HarbourColorEditorModel();
 
     QStringList getColors() const;
-    void setColors(QStringList aColors);
+    void setColors(QStringList);
 
     int getDragPos() const;
-    void setDragPos(int pos);
+    void setDragPos(int);
 
     Q_INVOKABLE void addColor(QColor);
     Q_INVOKABLE int indexOf(QColor) const;

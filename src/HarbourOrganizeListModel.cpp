@@ -1,6 +1,6 @@
 /*
+ * Copyright (C) 2019-2025 Slava Monich <slava@monich.com>
  * Copyright (C) 2019 Jolla Ltd.
- * Copyright (C) 2019 Slava Monich <slava.monich@jolla.com>
  *
  * You may use this file under the terms of the BSD license as follows:
  *
@@ -8,43 +8,49 @@
  * modification, are permitted provided that the following conditions
  * are met:
  *
- *   1. Redistributions of source code must retain the above copyright
- *      notice, this list of conditions and the following disclaimer.
- *   2. Redistributions in binary form must reproduce the above copyright
- *      notice, this list of conditions and the following disclaimer in
- *      the documentation and/or other materials provided with the
- *      distribution.
- *   3. Neither the names of the copyright holders nor the names of its
- *      contributors may be used to endorse or promote products derived
- *      from this software without specific prior written permission.
+ *  1. Redistributions of source code must retain the above copyright
+ *     notice, this list of conditions and the following disclaimer.
+ *
+ *  2. Redistributions in binary form must reproduce the above copyright
+ *     notice, this list of conditions and the following disclaimer
+ *     in the documentation and/or other materials provided with the
+ *     distribution.
+ *
+ *  3. Neither the names of the copyright holders nor the names of its
+ *     contributors may be used to endorse or promote products derived
+ *     from this software without specific prior written permission.
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
  * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * HOLDERS OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
  * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
  * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
  * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ * The views and conclusions contained in the software and documentation
+ * are those of the authors and should not be interpreted as representing
+ * any official policies, either expressed or implied.
  */
 
 #include "HarbourOrganizeListModel.h"
-
 #include "HarbourDebug.h"
 
 // ==========================================================================
 // HarbourOrganizeListModel::Private
 // ==========================================================================
 
-class HarbourOrganizeListModel::Private {
+class HarbourOrganizeListModel::Private
+{
 public:
     Private();
 
-    int mapToSource(int aRow) const;
-    int mapFromSource(int aRow) const;
+    int mapToSource(int) const;
+    int mapFromSource(int) const;
 
 public:
     int iDragIndex;
@@ -58,10 +64,11 @@ HarbourOrganizeListModel::Private::Private() :
     iDragPos(-1),
     iRowsAboutToBeMovedSlot(SLOT(_q_sourceRowsAboutToBeMoved(QModelIndex,int,int,QModelIndex,int))),
     iRowsMovedSlot(SLOT(_q_sourceRowsMoved(QModelIndex,int,int,QModelIndex,int)))
-{
-}
+{}
 
-int HarbourOrganizeListModel::Private::mapToSource(int aRow) const
+int
+HarbourOrganizeListModel::Private::mapToSource(
+    int aRow) const
 {
     if (iDragIndex < iDragPos) {
         if (aRow < iDragIndex || aRow > iDragPos) {
@@ -83,7 +90,9 @@ int HarbourOrganizeListModel::Private::mapToSource(int aRow) const
     return aRow;
 }
 
-int HarbourOrganizeListModel::Private::mapFromSource(int aRow) const
+int
+HarbourOrganizeListModel::Private::mapFromSource(
+    int aRow) const
 {
     if (iDragIndex < iDragPos) {
         if (aRow < iDragIndex || aRow > iDragPos) {
@@ -109,10 +118,9 @@ int HarbourOrganizeListModel::Private::mapFromSource(int aRow) const
 // HarbourOrganizeListModel
 // ==========================================================================
 
-#define SUPER QSortFilterProxyModel
-
-HarbourOrganizeListModel::HarbourOrganizeListModel(QObject* aParent) :
-    SUPER(aParent),
+HarbourOrganizeListModel::HarbourOrganizeListModel(
+    QObject* aParent) :
+    QSortFilterProxyModel(aParent),
     iPrivate(new Private)
 {
     connect(this, SIGNAL(sourceModelChanged()), SIGNAL(sourceModelObjectChanged()));
@@ -123,22 +131,28 @@ HarbourOrganizeListModel::~HarbourOrganizeListModel()
     delete iPrivate;
 }
 
-void HarbourOrganizeListModel::setSourceModelObject(QObject* aModel)
+void
+HarbourOrganizeListModel::setSourceModelObject(
+    QObject* aModel)
 {
     setSourceModel(qobject_cast<QAbstractItemModel*>(aModel));
 }
 
-int HarbourOrganizeListModel::dragIndex() const
+int
+HarbourOrganizeListModel::dragIndex() const
 {
     return iPrivate->iDragIndex;
 }
 
-int HarbourOrganizeListModel::dragPos() const
+int
+HarbourOrganizeListModel::dragPos() const
 {
     return iPrivate->iDragPos;
 }
 
-QModelIndex HarbourOrganizeListModel::mapToSource(const QModelIndex& aIndex) const
+QModelIndex
+HarbourOrganizeListModel::mapToSource(
+    const QModelIndex& aIndex) const
 {
     QAbstractItemModel* source = sourceModel();
     if (source) {
@@ -147,12 +161,16 @@ QModelIndex HarbourOrganizeListModel::mapToSource(const QModelIndex& aIndex) con
     return aIndex;
 }
 
-QModelIndex HarbourOrganizeListModel::mapFromSource(const QModelIndex& aIndex) const
+QModelIndex
+HarbourOrganizeListModel::mapFromSource(
+    const QModelIndex& aIndex) const
 {
     return index(iPrivate->mapFromSource(aIndex.row()), aIndex.column());
 }
 
-void HarbourOrganizeListModel::setDragIndex(int aIndex)
+void
+HarbourOrganizeListModel::setDragIndex(
+    int aIndex)
 {
     HDEBUG(aIndex);
     if (aIndex < 0) {
@@ -173,7 +191,7 @@ void HarbourOrganizeListModel::setDragIndex(int aIndex)
                     // that would result in layoutChanged signal which
                     // would reset the view (its current position etc).
                     // That's totally unnecessary because all the rows
-                    // are already in the right place as long as the view
+                    // are already in the right place as far as the view
                     // is concerned.
                     //
                     // It looks a bit fragile since these slots are
@@ -221,7 +239,9 @@ void HarbourOrganizeListModel::setDragIndex(int aIndex)
     }
 }
 
-void HarbourOrganizeListModel::setDragPos(int aPos)
+void
+HarbourOrganizeListModel::setDragPos(
+    int aPos)
 {
     if (aPos >= 0 && aPos < rowCount() &&
         iPrivate->iDragIndex >= 0 && iPrivate->iDragPos != aPos) {
