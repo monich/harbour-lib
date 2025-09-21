@@ -57,6 +57,7 @@ class HarbourBase32::Private
 public:
     static char nibbleToBase32(int, char);
     static int base32ToNibble(char);
+    static void appendChunk(QByteArray&, qint64, int);
 };
 
 // static
@@ -86,6 +87,23 @@ HarbourBase32::Private::base32ToNibble(
     }
 }
 
+// static
+void
+HarbourBase32::Private::appendChunk(
+    QByteArray& aOut,
+    qint64 aChunk,
+    int aNumBytes /* <= BASE32_BYTES_PER_CHUNK */)
+{
+    char bytes[BASE32_BYTES_PER_CHUNK];
+
+    // Most significant bytes first
+    for (int i = aNumBytes; i > 0; i--) {
+        bytes[i - 1] = (char) aChunk;
+        aChunk >>= 8;
+    }
+    aOut.append(bytes, aNumBytes);
+}
+
 // ==========================================================================
 // HarbourBase32
 // ==========================================================================
@@ -93,13 +111,13 @@ HarbourBase32::Private::base32ToNibble(
 // static
 bool
 HarbourBase32::isValidBase32(
-    const QString aBase32)
+    const QString aBase32,
+    bool aRequirePadding)
 {
     const int n = aBase32.length();
     const QChar* chars = aBase32.constData();
-
     qint64 buf = 0;
-    int i, bits = 0;
+    int i, nibbles = 0;
     bool empty = true;
 
     for (i = 0; i < n; i++) {
@@ -108,9 +126,7 @@ HarbourBase32::isValidBase32(
         if (!c.isSpace()) {
             const char l = c.toLatin1();
 
-            empty = false;
             if (l == '=') {
-                i++;
                 break;
             } else {
                 const int nibble = Private::base32ToNibble(l);
@@ -119,43 +135,85 @@ HarbourBase32::isValidBase32(
                     HDEBUG("Invalid BASE32 character" << c);
                     return false;
                 }
-                bits += BASE32_BITS_PER_NIBBLE;
+                nibbles++;
                 buf <<= BASE32_BITS_PER_NIBBLE;
                 buf += nibble;
-                if (bits == BASE32_BITS_PER_CHUNK) {
-                    bits = 0;
+                empty = false;
+                if (nibbles == BASE32_NIBBLES_PER_CHUNK) {
+                    nibbles = 0;
                     buf = 0;
                 }
             }
         }
     }
 
-    // Handle padding per RFC 4648
-    if (bits) {
-        while (i < n) {
-            const QChar c = chars[i++];
+    switch (nibbles) {
+    case 0:
+    case 2: // 1 byte (8 => 10 bits)
+    case 4: // 2 bytes (16 => 20 bits)
+    case 5: // 3 bytes (24 => 25 bits)
+    case 7: // 4 bytes (32 => 35 bits)
+        break;
+    default:
+        HDEBUG("Invalid BASE32 string" << aBase32);
+        return false;
+    }
 
-            if (!c.isSpace()) {
-                empty = false;
-                if (c != '=') {
-                    HDEBUG("Invalid BASE32 string" << aBase32);
-                    return false;
-                }
-            }
-        }
-        const int realbits = bits/8*8;
-        const int mask = (1 << (bits - realbits)) - 1;
-        if (buf & mask) {
+    // [RFC 4648]
+    // When fewer than 40 input bits are available in an input group,
+    // bits with value zero are added (on the right) to form an integral
+    // number of 5-bit groups.
+    if (nibbles) {
+        int usedBytes = nibbles * BASE32_BITS_PER_NIBBLE / 8;
+        int unusedBits = nibbles * BASE32_BITS_PER_NIBBLE - usedBytes * 8;
+        if (buf & ((1 << unusedBits) - 1)) {
+            HDEBUG("Invalid BASE32 string" << aBase32);
             return false;
         }
     }
+
+    // Handle padding per RFC 4648
+    int padding = 0;
+
+    while (i < n) {
+        const QChar c = chars[i++];
+
+        if (c == '=') {
+            if (empty) {
+                HDEBUG("Unexpected BASE32 padding" << aBase32);
+                return false;
+            } else if ((nibbles + padding) == BASE32_NIBBLES_PER_CHUNK) {
+                // Too much padding
+                HDEBUG("Invalid BASE32 padding" << aBase32);
+                return false;
+            }
+            padding++;
+        } else if (!c.isSpace()) {
+            HDEBUG("Invalid BASE32 padding" << aBase32);
+            return false;
+        }
+    }
+
+    if (padding) {
+        // If padding is there, it must be valid even if it wasn't required
+        if (!nibbles || (nibbles + padding) != BASE32_NIBBLES_PER_CHUNK) {
+            HDEBUG("Invalid BASE32 padding" << aBase32);
+            return false;
+        }
+    } else if (nibbles && aRequirePadding) {
+        // The padding was required but it's missing
+        HDEBUG("Missing BASE32 padding" << aBase32);
+        return false;
+    }
+
     return !empty;
 }
 
 // static
 QByteArray
 HarbourBase32::fromBase32(
-    const QString aBase32)
+    const QString aBase32,
+    bool aRequirePadding)
 {
     QByteArray out;
 
@@ -163,8 +221,7 @@ HarbourBase32::fromBase32(
     const QChar* chars = aBase32.constData();
 
     qint64 buf = 0;
-    int i, bits = 0;
-    char bytes[BASE32_BYTES_PER_CHUNK];
+    int i, nibbles = 0;
 
     out.reserve((n * 5 + 7)/8);
 
@@ -175,7 +232,6 @@ HarbourBase32::fromBase32(
             const char l = c.toLatin1();
 
             if (l == '=') {
-                i++;
                 break;
             } else {
                 const int nibble = Private::base32ToNibble(l);
@@ -184,46 +240,78 @@ HarbourBase32::fromBase32(
                     HDEBUG("Invalid BASE32 character" << c);
                     return QByteArray();
                 } else {
-                    bits += BASE32_BITS_PER_NIBBLE;
+                    nibbles++;
                     buf <<= BASE32_BITS_PER_NIBBLE;
                     buf += nibble;
-                    if (bits == BASE32_BITS_PER_CHUNK) {
-                        bits = 0;
-                        for (int k = BASE32_BYTES_PER_CHUNK; k > 0; k--) {
-                            bytes[k - 1] = (char)buf;
-                            buf >>= 8;
-                        }
-                        out.append(bytes, BASE32_BYTES_PER_CHUNK);
+                    if (nibbles == BASE32_NIBBLES_PER_CHUNK) {
+                        Private::appendChunk(out, buf, BASE32_BYTES_PER_CHUNK);
+                        nibbles = 0;
+                        buf = 0;
                     }
                 }
             }
         }
     }
 
-    // Handle padding per RFC 4648
-    if (bits) {
-        while (i < n) {
-            const QChar c = chars[i++];
+    switch (nibbles) {
+    case 0:
+    case 2: // 1 byte (8 => 10 bits)
+    case 4: // 2 bytes (16 => 20 bits)
+    case 5: // 3 bytes (24 => 25 bits)
+    case 7: // 4 bytes (32 => 35 bits)
+        break;
+    default:
+        HDEBUG("Invalid BASE32 string" << aBase32);
+        return QByteArray();
+    }
 
-            if (!c.isSpace() && c != '=') {
-                HDEBUG("Invalid BASE32 string" << aBase32);
+    const int usedBytes = nibbles * BASE32_BITS_PER_NIBBLE / 8;
+    const int unusedBits = nibbles * BASE32_BITS_PER_NIBBLE - usedBytes * 8;
+
+    // [RFC 4648]
+    // When fewer than 40 input bits are available in an input group,
+    // bits with value zero are added (on the right) to form an integral
+    // number of 5-bit groups.
+    if (buf & ((1 << unusedBits) - 1)) {
+        HDEBUG("Invalid BASE32 string" << aBase32);
+        return QByteArray();
+    }
+
+    // Handle padding per RFC 4648
+    int padding = 0;
+
+    while (i < n) {
+        const QChar c = chars[i++];
+
+        if (c == '=') {
+            if (out.isEmpty() && !nibbles) {
+                HDEBUG("Unexpected BASE32 padding" << aBase32);
+                return QByteArray();
+            } else if ((nibbles + padding) == BASE32_NIBBLES_PER_CHUNK) {
+                // Too much padding
+                HDEBUG("Invalid BASE32 padding" << aBase32);
                 return QByteArray();
             }
-        }
-        const int realbits = bits/8*8;
-        const int mask = (1 << (bits - realbits)) - 1;
-        if (buf & mask) {
-            HDEBUG("Invalid BASE32 string" << aBase32);
+            padding++;
+        } else if (!c.isSpace()) {
+            HDEBUG("Invalid BASE32 padding" << aBase32);
             return QByteArray();
-        } else {
-            buf >>= (bits - realbits);
-            for (int k = realbits / 8; k > 0; k--) {
-                bytes[k - 1] = (char)buf;
-                buf >>= 8;
-            }
-            out.append(bytes, realbits / 8);
         }
     }
+
+    if (padding) {
+        // If padding is there, it must be valid even if it wasn't required
+        if ((nibbles + padding) % BASE32_NIBBLES_PER_CHUNK) {
+            HDEBUG("Invalid BASE32 padding" << aBase32);
+            return QByteArray();
+        }
+    } else if (nibbles && aRequirePadding) {
+        // The padding was required but it's missing
+        HDEBUG("Missing BASE32 padding" << aBase32);
+        return QByteArray();
+    }
+
+    Private::appendChunk(out, buf >> unusedBits, usedBytes);
     return out;
 }
 
