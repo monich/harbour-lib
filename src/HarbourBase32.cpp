@@ -321,11 +321,22 @@ HarbourBase32::toBase32(
     const QByteArray aBinary,
     bool aLowerCase)
 {
+    const EncodeOptions opts = aLowerCase ? EncodeLowerCase : EncodeDefault;
+
+    return toBase32(aBinary, opts);
+}
+
+// static
+QString
+HarbourBase32::toBase32(
+    const QByteArray aBinary,
+    EncodeOptions aOptions)
+{
     QString str;
     const int n = aBinary.size();
     const uchar* ptr = (uchar*)aBinary.constData();
     char base32[BASE32_NIBBLES_PER_CHUNK + 1];
-    const char a = aLowerCase ? 'a' : 'A';
+    const char a = (aOptions & EncodeLowerCase) ? 'a' : 'A';
     quint64 chunk = 0;
     int i, k, bits = 0;
 
@@ -352,7 +363,7 @@ HarbourBase32::toBase32(
         chunk <<= (outnibbles * BASE32_BITS_PER_NIBBLE - bits);
         k = BASE32_NIBBLES_PER_CHUNK;
         while (k > outnibbles) {
-            base32[--k] = '=';
+            base32[--k] = (aOptions & EncodeNoPadding) ? '\0' : '=';
         }
         while (k > 0) {
             const int nibble = chunk & BASE32_NIBBLE_MASK;

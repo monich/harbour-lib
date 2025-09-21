@@ -49,9 +49,19 @@ class HarbourBase32
     HarbourBase32() Q_DECL_EQ_DELETE;
 
 public:
+    enum EncodeOption {
+        EncodeDefault = 0,      // UPPER CASE + padding
+        EncodeLowerCase = 0x1,
+        EncodeNoPadding = 0x2,
+    };
+    Q_DECLARE_FLAGS(EncodeOptions, EncodeOption)
+
     static bool isValidBase32(const QString, bool aRequirePadding = false);
-    static QString toBase32(const QByteArray, bool aLowerCase = true);
+    static QString toBase32(const QByteArray, bool aLowerCase);
+    static QString toBase32(const QByteArray, EncodeOptions aOptions = EncodeDefault);
     static QByteArray fromBase32(const QString, bool aRequirePadding = false);
 };
+
+Q_DECLARE_OPERATORS_FOR_FLAGS(HarbourBase32::EncodeOptions)
 
 #endif // HARBOUR_BASE32_H
