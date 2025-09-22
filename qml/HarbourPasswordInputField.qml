@@ -1,44 +1,53 @@
 /*
+ * Copyright (C) 2018-2025 Slava Monich <slava@monich.com>
  * Copyright (C) 2018-2021 Jolla Ltd.
- * Copyright (C) 2018-2021 Slava Monich <slava@monich.com>
  *
- * You may use this file under the terms of BSD license as follows:
+ * You may use this file under the terms of the BSD license as follows:
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
  *
- *   1. Redistributions of source code must retain the above copyright
- *      notice, this list of conditions and the following disclaimer.
- *   2. Redistributions in binary form must reproduce the above copyright
- *      notice, this list of conditions and the following disclaimer in
- *      the documentation and/or other materials provided with the
- *      distribution.
- *   3. Neither the names of the copyright holders nor the names of its
- *      contributors may be used to endorse or promote products derived
- *      from this software without specific prior written permission.
+ *  1. Redistributions of source code must retain the above copyright
+ *     notice, this list of conditions and the following disclaimer.
+ *
+ *  2. Redistributions in binary form must reproduce the above copyright
+ *     notice, this list of conditions and the following disclaimer
+ *     in the documentation and/or other materials provided with the
+ *     distribution.
+ *
+ *  3. Neither the names of the copyright holders nor the names of its
+ *     contributors may be used to endorse or promote products derived
+ *     from this software without specific prior written permission.
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
  * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * HOLDERS OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
  * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
  * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
  * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ * The views and conclusions contained in the software and documentation
+ * are those of the authors and should not be interpreted as representing
+ * any official policies, either expressed or implied.
  */
 
 import QtQuick 2.0
 import Sailfish.Silica 1.0
 
 TextField {
-    id: field
+    id: thisItem
 
     property bool showEchoModeToggle: activeFocus
     property int passwordEchoMode: TextInput.Password
+
+    // Sailfish OS 4.0 renamed TextBase._contentItem into contentItem
+    readonly property var editContentItem: ('contentItem' in thisItem) ? contentItem : ('_contentItem' in thisItem) ? _contentItem : null
 
     property bool _usePasswordEchoMode: true
     property int _buttonLeftMargin: Theme.paddingLarge
@@ -73,15 +82,15 @@ TextField {
         id: keepFocusTimer
 
         interval: 500
-        onTriggered: field.focusOutBehavior = FocusBehavior.ClearItemFocus
+        onTriggered: thisItem.focusOutBehavior = FocusBehavior.ClearItemFocus
     }
 
     states: State {
         name: "showToggle"
-        when: field.showEchoModeToggle
+        when: thisItem.showEchoModeToggle
         PropertyChanges {
-            target: field
-            textRightMargin: field._buttonLeftMargin/2 + passwordVisibilityButton.width + field.textMargin
+            target: thisItem
+            textRightMargin: thisItem._buttonLeftMargin/2 + passwordVisibilityButton.width + thisItem.textMargin
         }
         PropertyChanges {
             target: passwordVisibilityButton
@@ -106,15 +115,15 @@ TextField {
     MouseArea {
         id: passwordVisibilityButton
 
-        parent: field    // ensure the field is visible, avoid auto-parenting to TextBase contentItem
-        x: field.width - width - field.textMargin
-        width: Math.max(textAbc.implicitWidth, textDots.implicitWidth) + field._buttonLeftMargin/2
-        height: field.height - Theme.paddingLarge
+        parent: thisItem    // ensure the field is visible, avoid auto-parenting to TextBase contentItem
+        x: thisItem.width - width - thisItem.textMargin
+        width: Math.max(textAbc.implicitWidth, textDots.implicitWidth) + thisItem._buttonLeftMargin/2
+        height: thisItem.height - Theme.paddingLarge
         opacity: 0
         enabled: false
 
         onClicked: {
-            field._usePasswordEchoMode = !field._usePasswordEchoMode
+            thisItem._usePasswordEchoMode = !thisItem._usePasswordEchoMode
         }
 
         Text {
@@ -122,10 +131,10 @@ TextField {
 
             anchors {
                 top: parent.top
-                topMargin: field.textTopMargin
+                topMargin: thisItem.textTopMargin
                 horizontalCenter: parent.horizontalCenter
             }
-            visible: field.echoMode == TextInput.Password
+            visible: thisItem.echoMode == TextInput.Password
             font.pixelSize: Theme.fontSizeMedium
             text: "abc"
             textFormat: Text.PlainText
@@ -137,10 +146,10 @@ TextField {
 
             anchors {
                 top: parent.top
-                topMargin: field.textTopMargin
+                topMargin: thisItem.textTopMargin
                 horizontalCenter: parent.horizontalCenter
             }
-            visible: field.echoMode == TextInput.Normal
+            visible: thisItem.echoMode == TextInput.Normal
             font.pixelSize: Theme.fontSizeMedium
             text: "\u2022\u2022\u2022"
             textFormat: Text.PlainText
