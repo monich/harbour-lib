@@ -191,27 +191,28 @@ HarbourImageProvider::TextureFactory::colorize(
         HWARN("TextureFactory: Image format not supported, doing format conversion");
         aImage = aImage.convertToFormat(QImage::Format_ARGB32_Premultiplied);
         format = QImage::Format_ARGB32_Premultiplied;
+        break;
     }
 
     const QRgb rgb = aColor.rgba() & 0x00ffffff;
     QRgb* bits = (QRgb*)aImage.bits();
-    const int numPixels = qImageSizeInBytes(aImage)/sizeof(QRgb);
+    const uint numPixels = qImageSizeInBytes(aImage)/sizeof(QRgb);
 
     if (format == QImage::Format_ARGB32) {
-        for (int i=0; i<numPixels; i++) {
+        for (uint i = 0; i < numPixels; i++) {
             QRgb alpha = bits[i] & 0xff000000;
             bits[i] = alpha | rgb;
         }
     } else if (format == QImage::Format_ARGB32_Premultiplied) {
         QRgb colorPremultiplied[256];
-        for (int alpha = 0; alpha<256; alpha++) {
+        for (uint alpha = 0; alpha < 256; alpha++) {
             colorPremultiplied[alpha] =
                     (alpha << 24) |
                     (alpha*qRed(rgb)/255 << 16) |
                     (alpha*qGreen(rgb)/255 <<  8) |
                     (alpha*qBlue(rgb) /255);
         }
-        for (int i=0; i<numPixels; i++) {
+        for (uint i = 0; i < numPixels; i++) {
             int alpha = (bits[i] & 0xff000000) >> 24;
             bits[i] = colorPremultiplied[alpha];
         }
