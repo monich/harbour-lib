@@ -6,7 +6,7 @@ QT-= gui
 
 # For HarbourSystemTime
 CONFIG += link_pkgconfig
-PKGCONFIG += libglibutil
+PKGCONFIG += libglibutil libqrencode
 
 VERSION = 1.0
 
@@ -32,12 +32,12 @@ SOURCES += \
     src/HarbourJson.cpp \
     src/HarbourLib.cpp \
     src/HarbourMce.cpp \
-    src/HarbourMediaPlugin.cpp \
     src/HarbourObject.cpp \
     src/HarbourOrganizeListModel.cpp \
-    src/HarbourPolicyPlugin.cpp \
     src/HarbourProcessState.cpp \
     src/HarbourProtoBuf.cpp \
+    src/HarbourQrCodeGenerator.cpp \
+    src/HarbourQrCodeImageProvider.cpp \
     src/HarbourSelectionListModel.cpp \
     src/HarbourSigChildHandler.cpp \
     src/HarbourSingleImageProvider.cpp \
@@ -54,7 +54,9 @@ SOURCES += \
 greaterThan(QT_MAJOR_VERSION, 4) {
 SOURCES += \
     src/HarbourImageProvider.cpp \
+    src/HarbourMediaPlugin.cpp \
     src/HarbourPluginLoader.cpp \
+    src/HarbourPolicyPlugin.cpp \
     src/HarbourTheme.cpp
 }
 
@@ -69,12 +71,12 @@ PUBLIC_HEADERS += \
     include/HarbourDisplayBlanking.h \
     include/HarbourJson.h \
     include/HarbourLib.h \
-    include/HarbourMediaPlugin.h \
     include/HarbourObject.h \
     include/HarbourOrganizeListModel.h \
-    include/HarbourPolicyPlugin.h \
     include/HarbourProcessState.h \
     include/HarbourProtoBuf.h \
+    include/HarbourQrCodeGenerator.h \
+    include/HarbourQrCodeImageProvider.h \
     include/HarbourSelectionListModel.h \
     include/HarbourSigChildHandler.h \
     include/HarbourSingleImageProvider.h \
@@ -91,7 +93,9 @@ PUBLIC_HEADERS += \
 greaterThan(QT_MAJOR_VERSION, 4) {
 PUBLIC_HEADERS += \
     include/HarbourImageProvider.h \
+    include/HarbourMediaPlugin.h \
     include/HarbourPluginLoader.h \
+    include/HarbourPolicyPlugin.h \
     include/HarbourTheme.h
 OTHER_FILES += qml/*.qml
 }
