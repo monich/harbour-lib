@@ -54,9 +54,6 @@ SOURCES += \
 greaterThan(QT_MAJOR_VERSION, 4) {
 SOURCES += \
     src/HarbourImageProvider.cpp \
-    src/HarbourMediaPlugin.cpp \
-    src/HarbourPluginLoader.cpp \
-    src/HarbourPolicyPlugin.cpp \
     src/HarbourTheme.cpp
 }
 
@@ -93,9 +90,6 @@ PUBLIC_HEADERS += \
 greaterThan(QT_MAJOR_VERSION, 4) {
 PUBLIC_HEADERS += \
     include/HarbourImageProvider.h \
-    include/HarbourMediaPlugin.h \
-    include/HarbourPluginLoader.h \
-    include/HarbourPolicyPlugin.h \
     include/HarbourTheme.h
 OTHER_FILES += qml/*.qml
 }
