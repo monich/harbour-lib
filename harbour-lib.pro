@@ -4,7 +4,6 @@ TARGET = harbour-lib
 QT += dbus
 QT-= gui
 
-# For HarbourSystemTime
 CONFIG += link_pkgconfig
 PKGCONFIG += libglibutil libqrencode
 
