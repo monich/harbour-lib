@@ -1,5 +1,5 @@
 ﻿/*
- * Copyright (C) 2019-2024 Slava Monich <slava@monich.com>
+ * Copyright (C) 2019-2026 Slava Monich <slava@monich.com>
  * Copyright (C) 2019 Jolla Ltd.
  *
  * You may use this file under the terms of the BSD license as follows:
@@ -40,6 +40,7 @@
 #include "HarbourSelectionListModel.h"
 
 #include "HarbourDebug.h"
+#include "HarbourParentSignalQueueObject.h"
 
 #define ROLE "selected"
 
@@ -63,29 +64,30 @@
     s(SelectionCount,selectionCount) \
     s(Count,count)
 
+enum HarbourSelectionListModelSignal {
+    #define SIGNAL_ENUM_(Name,name) Signal##Name##Changed,
+    QUEUED_SIGNALS(SIGNAL_ENUM_)
+    #undef SIGNAL_ENUM_
+    HarbourSelectionListModelSignalCount
+};
+
+typedef HarbourParentSignalQueueObject<HarbourSelectionListModel,
+    HarbourSelectionListModelSignal, HarbourSelectionListModelSignalCount>
+    HarbourSelectionListModelPrivateBase;
+
 class HarbourSelectionListModel::Private :
-    public QObject
+    public HarbourSelectionListModelPrivateBase
 {
     Q_OBJECT
 
+    static const SignalEmitter gSignalEmitters [];
+
 public:
-    typedef void (HarbourSelectionListModel::*SignalEmitter)();
-    typedef uint SignalMask;
-
-    enum Signal {
-#define SIGNAL_ENUM_(Name,name) Signal##Name##Changed,
-        QUEUED_SIGNALS(SIGNAL_ENUM_)
-#undef SIGNAL_ENUM_
-        SignalCount
-    };
-
     Private(HarbourSelectionListModel*);
 
     static int binaryFind(const QList<int>, int);
 
     HarbourSelectionListModel* parentModel() const;
-    void queueSignal(Signal aSignal);
-    void emitQueuedSignals();
     bool isSelectionRole(int) const;
     bool isSelectedRow(int) const;
     bool isSelectableRow(int) const;
@@ -95,8 +97,8 @@ public:
     void updateCounts();
     void selectRow(int);
     void unselectRow(int);
-    void toggleRows(const QList<int>);
-    void setNonSelectableRows(const QList<int>);
+    void toggleRows(const QList<int>&);
+    void setNonSelectableRows(const QList<int>&);
     void selectedRowChanged(int);
     void selectionChangedAt(int);
     void clearSelection();
@@ -107,8 +109,6 @@ public Q_SLOTS:
     void onCountChanged();
 
 public:
-    SignalMask iQueuedSignals;
-    Signal iFirstQueuedSignal;
     QList<int> iSelectedRows;
     QList<int> iNonSelectableRows;
     QList<int> iNormalizedNonSelectableRows;
@@ -117,11 +117,16 @@ public:
     int iLastKnownCount;
 };
 
+const HarbourSelectionListModel::Private::SignalEmitter
+HarbourSelectionListModel::Private::gSignalEmitters [] = {
+    #define SIGNAL_EMITTER_(Name,name) &HarbourSelectionListModel::name##Changed,
+    QUEUED_SIGNALS(SIGNAL_EMITTER_)
+    #undef  SIGNAL_EMITTER_
+};
+
 HarbourSelectionListModel::Private::Private(
     HarbourSelectionListModel* aParent) :
-    QObject(aParent),
-    iQueuedSignals(0),
-    iFirstQueuedSignal(SignalCount),
+    HarbourSelectionListModelPrivateBase(aParent, gSignalEmitters),
     iLastKnownSelectableCount(0),
     iLastKnownCount(0)
 {
@@ -163,48 +168,6 @@ HarbourSelectionListModel*
 HarbourSelectionListModel::Private::parentModel() const
 {
     return qobject_cast<HarbourSelectionListModel*>(parent());
-}
-
-void
-HarbourSelectionListModel::Private::queueSignal(
-    Signal aSignal)
-{
-    if (aSignal >= 0 && aSignal < SignalCount) {
-        const SignalMask signalBit = (SignalMask(1) << aSignal);
-        if (iQueuedSignals) {
-            iQueuedSignals |= signalBit;
-            if (iFirstQueuedSignal > aSignal) {
-                iFirstQueuedSignal = aSignal;
-            }
-        } else {
-            iQueuedSignals = signalBit;
-            iFirstQueuedSignal = aSignal;
-        }
-    }
-}
-
-void
-HarbourSelectionListModel::Private::emitQueuedSignals()
-{
-    static const SignalEmitter emitSignal [] = {
-#define SIGNAL_EMITTER_(Name,name) &HarbourSelectionListModel::name##Changed,
-        QUEUED_SIGNALS(SIGNAL_EMITTER_)
-#undef SIGNAL_EMITTER_
-    };
-    if (iQueuedSignals) {
-        HarbourSelectionListModel* model = parentModel();
-        // Reset first queued signal before emitting the signals.
-        // Signal handlers may emit new signals.
-        uint i = iFirstQueuedSignal;
-        iFirstQueuedSignal = SignalCount;
-        for (; i < SignalCount && iQueuedSignals; i++) {
-            const SignalMask signalBit = (SignalMask(1) << i);
-            if (iQueuedSignals & signalBit) {
-                iQueuedSignals &= ~signalBit;
-                Q_EMIT (model->*(emitSignal[i]))();
-            }
-        }
-    }
 }
 
 inline
@@ -434,7 +397,7 @@ HarbourSelectionListModel::Private::unselectRow(
 
 void
 HarbourSelectionListModel::Private::toggleRows(
-    const QList<int> aRows)
+    const QList<int>& aRows)
 {
     int i;
     const int n = aRows.count();
@@ -478,7 +441,7 @@ HarbourSelectionListModel::Private::toggleRows(
 
 void
 HarbourSelectionListModel::Private::setNonSelectableRows(
-    const QList<int> aRows)
+    const QList<int>& aRows)
 {
     if (iNonSelectableRows != aRows) {
         iNonSelectableRows = aRows;

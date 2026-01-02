@@ -69,6 +69,7 @@ PUBLIC_HEADERS += \
     include/HarbourLib.h \
     include/HarbourObject.h \
     include/HarbourOrganizeListModel.h \
+    include/HarbourParentSignalQueueObject.h \
     include/HarbourProcessState.h \
     include/HarbourProtoBuf.h \
     include/HarbourQrCodeGenerator.h \
