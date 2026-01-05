@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019-2024 Slava Monich <slava@monich.com>
+ * Copyright (C) 2019-2025 Slava Monich <slava@monich.com>
  * Copyright (C) 2019 Jolla Ltd.
  *
  * You may use this file under the terms of the BSD license as follows:
@@ -40,6 +40,7 @@
 #include "HarbourSingleImageProvider.h"
 
 #include "HarbourDebug.h"
+#include "HarbourParentSignalQueueObject.h"
 
 #include <QtQml/QQmlEngine>
 #include <QtQml/QQmlContext>
@@ -100,29 +101,39 @@ HarbourSingleImageProvider::ImageProvider::requestImage(
 // HarbourSingleImageProvider::Private
 // ==========================================================================
 
+// s(SignalName,signalName)
+#define QUEUED_SIGNALS(s) \
+    s(Image,image) \
+    s(Source,source) \
+    s(MirrorHorizontally,mirrorHorizontally) \
+    s(MirrorVertically,mirrorVertically)
+
+
+enum HarbourSingleImageProviderSignal {
+    #define SIGNAL_ENUM_(Name,name) Signal##Name##Changed,
+    QUEUED_SIGNALS(SIGNAL_ENUM_)
+    #undef SIGNAL_ENUM_
+    HarbourSingleImageProviderSignalCount
+};
+
+typedef HarbourParentSignalQueueObject<HarbourSingleImageProvider,
+    HarbourSingleImageProviderSignal, HarbourSingleImageProviderSignalCount>
+    HarbourSingleImageProviderPrivateBase;
+
 class HarbourSingleImageProvider::Private :
-    public QObject
+    public HarbourSingleImageProviderPrivateBase
 {
     Q_OBJECT
 
+    static const SignalEmitter gSignalEmitters [];
+
 public:
-    class SaveState
-    {
-    public:
-        SaveState(HarbourSingleImageProvider*);
-        void emitSignals(HarbourSingleImageProvider*) const;
-
-    private:
-        const Options iOptions;
-        const QString iId;
-    };
-
     Private(HarbourSingleImageProvider*);
     ~Private();
 
     bool setEngine(QQmlEngine*);
     void set(const QImage&, Options);
-    void registerProvider();
+    void registerProvider(ImageProvider*);
 
 public Q_SLOTS:
     void onEngineDied();
@@ -135,12 +146,19 @@ public:
     QQmlEngine* iEngine;
 };
 
-HarbourSingleImageProvider::Private::Private(HarbourSingleImageProvider* aParent) :
-    QObject(aParent),
+const HarbourSingleImageProvider::Private::SignalEmitter
+HarbourSingleImageProvider::Private::gSignalEmitters [] = {
+    #define SIGNAL_EMITTER_(Name,name) &HarbourSingleImageProvider::name##Changed,
+    QUEUED_SIGNALS(SIGNAL_EMITTER_)
+    #undef  SIGNAL_EMITTER_
+};
+
+HarbourSingleImageProvider::Private::Private(
+    HarbourSingleImageProvider* aParent) :
+    HarbourSingleImageProviderPrivateBase(aParent, gSignalEmitters),
     iOptions(Default),
     iEngine(Q_NULLPTR)
-{
-}
+{}
 
 HarbourSingleImageProvider::Private::~Private()
 {
@@ -150,13 +168,13 @@ HarbourSingleImageProvider::Private::~Private()
 }
 
 void
-HarbourSingleImageProvider::Private::registerProvider()
+HarbourSingleImageProvider::Private::registerProvider(
+    ImageProvider* aProvider)
 {
-    QQmlImageProviderBase* provider = new ImageProvider(iImage);
-    iId = qStringPrintf("HarbourSingleImageProvider%p", provider);
+    iId = qStringPrintf("HarbourSingleImageProvider%p", aProvider);
     iSourceUri = QString("image://%1/%2").arg(iId, ImageProvider::IMAGE_NAME);
     HDEBUG("registering provider" << iId);
-    iEngine->addImageProvider(iId, provider);
+    iEngine->addImageProvider(iId, aProvider);
 }
 
 bool
@@ -174,7 +192,7 @@ HarbourSingleImageProvider::Private::setEngine(
     if (iEngine) {
         connect(iEngine, SIGNAL(destroyed(QObject*)), SLOT(onEngineDied()));
         if (!iImage.isNull()) {
-            registerProvider();
+            registerProvider(new ImageProvider(iImage));
             return true;
         }
     }
@@ -188,15 +206,36 @@ HarbourSingleImageProvider::Private::set(
 {
     const bool mirrorHorizontally = aOptions.testFlag(MirrorHorizontally);
     const bool mirrorVertically = aOptions.testFlag(MirrorVertically);
+
     HDEBUG(aImage << mirrorHorizontally << mirrorVertically);
-    if (!iId.isEmpty()) {
-        iEngine->removeImageProvider(iId);
+    queueSignal(SignalImageChanged);
+    queueSignal(SignalSourceChanged);
+    if ((iOptions & MirrorHorizontally) != mirrorHorizontally) {
+        queueSignal(SignalMirrorHorizontallyChanged);
     }
+    if ((iOptions & MirrorVertically) != mirrorVertically) {
+        queueSignal(SignalMirrorVerticallyChanged);
+    }
+
     iOptions = aOptions;
     iImage = (aImage.width() && (mirrorHorizontally | mirrorVertically)) ?
         aImage.mirrored(mirrorHorizontally, mirrorVertically) : aImage;
-    if (iEngine && !iImage.isNull()) {
-        registerProvider();
+
+    // Allocate new provider before unregistering the previous one,
+    // to ensure that the provider's pointer (and therefore, its id
+    // which is derived from the pointer) really changes. Deallocating
+    // the object and immediately allocating a new one may (and often
+    // does) reuse the same address. The id (and the image source URL)
+    // must change, or else the image may remain in the cache and won't
+    // be updated.
+    ImageProvider* provider = (iEngine && !iImage.isNull()) ?
+        new ImageProvider(aImage) : Q_NULLPTR;
+
+    if (!iId.isEmpty()) {
+        iEngine->removeImageProvider(iId);
+    }
+    if (provider) {
+        registerProvider(provider);
     }
 }
 
@@ -206,35 +245,9 @@ HarbourSingleImageProvider::Private::onEngineDied()
     HDEBUG("engine died");
     iEngine = Q_NULLPTR;
     iId = QString();
-}
-
-
-// ==========================================================================
-// HarbourSingleImageProvider::Private::SaveState
-// ==========================================================================
-
-HarbourSingleImageProvider::Private::SaveState::SaveState(
-    HarbourSingleImageProvider* aObject) :
-    iOptions(aObject->iPrivate->iOptions),
-    iId(aObject->iPrivate->iId)
-{}
-
-void
-HarbourSingleImageProvider::Private::SaveState::emitSignals(
-    HarbourSingleImageProvider* aObject) const
-{
-    Private* priv = aObject->iPrivate;
-    const Options newOpts(priv->iOptions);
-
-    if (iId != aObject->iPrivate->iId) {
-        Q_EMIT aObject->sourceChanged();
-    }
-    if ((iOptions & MirrorHorizontally) != (newOpts & MirrorHorizontally)) {
-        Q_EMIT aObject->mirrorHorizontallyChanged();
-    }
-    if ((iOptions & MirrorVertically) != (newOpts & MirrorVertically)) {
-        Q_EMIT aObject->mirrorVerticallyChanged();
-    }
+    queueSignal(SignalImageChanged);
+    queueSignal(SignalSourceChanged);
+    emitQueuedSignals();
 }
 
 // ==========================================================================
@@ -276,11 +289,9 @@ HarbourSingleImageProvider::image() const
 void
 HarbourSingleImageProvider::setImage(QImage aImage)
 {
-    const Private::SaveState state(this);
     HDEBUG(aImage);
     iPrivate->set(aImage, iPrivate->iOptions);
-    Q_EMIT imageChanged(); // Not emitted by SaveState
-    state.emitSignals(this);
+    iPrivate->emitQueuedSignals();
 }
 
 bool
@@ -294,10 +305,8 @@ HarbourSingleImageProvider::setMirrorHorizontally(
     bool aMirrorHorizontally)
 {
     if (mirrorHorizontally() != aMirrorHorizontally) {
-        const Private::SaveState state(this);
-        HDEBUG(aMirrorHorizontally);
         iPrivate->set(iPrivate->iImage, iPrivate->iOptions ^ MirrorHorizontally);
-        state.emitSignals(this);
+        iPrivate->emitQueuedSignals();
     }
 }
 
@@ -312,10 +321,8 @@ HarbourSingleImageProvider::setMirrorVertically(
     bool aMirrorVertically)
 {
     if (mirrorVertically() != aMirrorVertically) {
-        const Private::SaveState state(this);
-        HDEBUG(aMirrorVertically);
         iPrivate->set(iPrivate->iImage, iPrivate->iOptions ^ MirrorVertically);
-        state.emitSignals(this);
+        iPrivate->emitQueuedSignals();
     }
 }
 
@@ -330,11 +337,9 @@ HarbourSingleImageProvider::set(
     QImage aImage,
     Options aOptions)
 {
-    const Private::SaveState state(this);
     HDEBUG(aImage << aOptions);
     iPrivate->set(aImage, aOptions);
-    Q_EMIT imageChanged(); // Not emitted by SaveState
-    state.emitSignals(this);
+    iPrivate->emitQueuedSignals();
 }
 
 void
@@ -343,8 +348,7 @@ HarbourSingleImageProvider::clear()
     if (!iPrivate->iImage.isNull()) {
         HDEBUG("clearing image");
         iPrivate->set(QImage(), iPrivate->iOptions);
-        Q_EMIT sourceChanged();
-        Q_EMIT imageChanged();
+        iPrivate->emitQueuedSignals();
     }
 }
 
