@@ -56,9 +56,9 @@ public:
 
     HarbourParentSignalQueueObject(
         Parent* aParent,
-        const SignalEmitter* aSignals) :
+        const SignalEmitter* aEmitters) :
         QObject(aParent),
-        iSignals(aSignals),
+        iEmitters(aEmitters),
         iQueuedSignals(0),
         iFirstQueuedSignal(Count)
     {}
@@ -94,14 +94,28 @@ public:
                 const SignalMask signalBit = (SignalMask(1) << i);
                 if (iQueuedSignals & signalBit) {
                     iQueuedSignals &= ~signalBit;
-                    Q_EMIT (obj->*(iSignals[i]))();
+                    Q_EMIT (obj->*(iEmitters[i]))();
                 }
             }
         }
     }
 
+    bool
+    emitQueuedSignal(
+        Enum aSignal)
+    {
+        const SignalMask signalBit = (SignalMask(1) << aSignal);
+        if (iQueuedSignals & signalBit) {
+            iQueuedSignals &= ~signalBit;
+            Q_EMIT (qobject_cast<Parent*>(parent())->*(iEmitters[aSignal]))();
+            return true;
+        } else {
+            return false;
+        }
+    }
+
 private:
-    const SignalEmitter* iSignals;
+    const SignalEmitter* iEmitters;
     SignalMask iQueuedSignals;
     Enum iFirstQueuedSignal;
 };
