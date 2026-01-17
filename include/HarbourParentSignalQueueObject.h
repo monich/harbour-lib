@@ -63,6 +63,13 @@ public:
         iFirstQueuedSignal(Count)
     {}
 
+    bool
+    signalQueued(
+        Enum aSignal) const
+    {
+        return (iQueuedSignals & (SignalMask(1) << aSignal)) != 0;
+    }
+
     void
     queueSignal(
         Enum aSignal)
