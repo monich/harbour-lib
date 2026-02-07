@@ -101,7 +101,10 @@ public:
                 const SignalMask signalBit = (SignalMask(1) << i);
                 if (iQueuedSignals & signalBit) {
                     iQueuedSignals &= ~signalBit;
-                    Q_EMIT (obj->*(iEmitters[i]))();
+                    if (obj) {
+                        // Our parent may be null when it's being destroyed
+                        Q_EMIT (obj->*(iEmitters[i]))();
+                    }
                 }
             }
         }
@@ -113,8 +116,13 @@ public:
     {
         const SignalMask signalBit = (SignalMask(1) << aSignal);
         if (iQueuedSignals & signalBit) {
+            Parent* obj = qobject_cast<Parent*>(parent());
+
             iQueuedSignals &= ~signalBit;
-            Q_EMIT (qobject_cast<Parent*>(parent())->*(iEmitters[aSignal]))();
+            if (obj) {
+                // Our parent may be null when it's being destroyed
+                Q_EMIT (obj->*(iEmitters[aSignal]))();
+            }
             return true;
         } else {
             return false;
