@@ -48,6 +48,7 @@ Item {
 
     property bool startOnTap: true
     property bool autoStart: true
+    property alias autoStartDelay: autoStartTimer.interval
     property alias text: label.text
     property alias font: label.font
     property alias color: label.color
@@ -60,10 +61,12 @@ Item {
     readonly property bool _needScroll: label.contentWidth > thisItem.width
 
     function start() {
-        if (horizontalAlignment === Text.AlignRight) {
-            leftFadeMarqueeAnimation.start()
-        } else {
-            rightFadeMarqueeAnimation.start()
+        if (_needScroll) {
+            if (horizontalAlignment === Text.AlignRight) {
+                leftFadeMarqueeAnimation.start()
+            } else {
+                rightFadeMarqueeAnimation.start()
+            }
         }
     }
 
@@ -72,10 +75,31 @@ Item {
         rightFadeMarqueeAnimation.stop()
     }
 
-    onVisibleChanged: {
-        if (visible && autoStart && _needScroll) {
-            start()
+    onAutoStartChanged: {
+        if (autoStart) {
+            if (visible) {
+                autoStartTimer.start()
+            }
+        } else {
+            autoStartTimer.stop()
         }
+    }
+
+    onVisibleChanged: {
+        if (visible) {
+            if (autoStart) {
+                autoStartTimer.start()
+            }
+        } else {
+            autoStartTimer.stop()
+        }
+    }
+
+    Timer {
+        id: autoStartTimer
+
+        interval: 1000
+        onTriggered: thisItem.start()
     }
 
     Label {
@@ -102,7 +126,7 @@ Item {
 
     function _duration(span) {
         // By default, covering Theme.itemSizeHuge in 400 ms
-        return span * speed * 400 / Theme.itemSizeHuge
+        return (span > 0) ? (span * speed * 400 / Theme.itemSizeHuge) : 0
     }
 
     SequentialAnimation {
