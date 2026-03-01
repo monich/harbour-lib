@@ -92,6 +92,8 @@ Item {
             }
         } else {
             autoStartTimer.stop()
+            leftFadeMarqueeAnimation.complete()
+            rightFadeMarqueeAnimation.complete()
         }
     }
 
