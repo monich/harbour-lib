@@ -63,6 +63,14 @@ public:
         iFirstQueuedSignal(Count)
     {}
 
+    inline
+    Parent*
+    parentObject() const
+    {
+        return qobject_cast<Parent*>(parent());
+    }
+
+    inline
     bool
     signalQueued(
         Enum aSignal) const
@@ -92,7 +100,7 @@ public:
     emitQueuedSignals()
     {
         if (iQueuedSignals) {
-            Parent* obj = qobject_cast<Parent*>(parent());
+            Parent* obj = parentObject();
             // Reset first queued signal before emitting the signals.
             // Signal handlers may emit more signals.
             uint i = iFirstQueuedSignal;
