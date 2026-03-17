@@ -97,6 +97,12 @@ Item {
         }
     }
 
+    onTextChanged: {
+        if (visible && autoStart) {
+            autoStartTimer.start()
+        }
+    }
+
     Timer {
         id: autoStartTimer
 
