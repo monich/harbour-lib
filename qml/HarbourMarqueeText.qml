@@ -99,7 +99,7 @@ Item {
 
     onTextChanged: {
         if (visible && autoStart) {
-            autoStartTimer.start()
+            autoStartTimer.restart()
         }
     }
 
