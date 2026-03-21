@@ -98,8 +98,12 @@ Item {
     }
 
     onTextChanged: {
+        leftFadeMarqueeAnimation.complete()
+        rightFadeMarqueeAnimation.complete()
         if (visible && autoStart) {
             autoStartTimer.restart()
+        } else {
+            autoStartTimer.stop()
         }
     }
 
@@ -134,7 +138,7 @@ Item {
 
     function _duration(span) {
         // By default, covering Theme.itemSizeHuge in 400 ms
-        return (span > 0) ? (span * 400 / Theme.itemSizeHuge / speed) : 0
+        return (span > 0 && speed > 0) ? (span * 400 / Theme.itemSizeHuge / speed) : 0
     }
 
     SequentialAnimation {
