@@ -137,6 +137,13 @@ public:
         }
     }
 
+    void
+    clearQueuedSignals()
+    {
+        iQueuedSignals = 0;
+        iFirstQueuedSignal = Count;
+    }
+
 private:
     const SignalEmitter* iEmitters;
     SignalMask iQueuedSignals;
