@@ -72,6 +72,13 @@ public:
 
     inline
     bool
+    haveQueuedSignals() const
+    {
+        return iQueuedSignals != 0;
+    }
+
+    inline
+    bool
     signalQueued(
         Enum aSignal) const
     {
