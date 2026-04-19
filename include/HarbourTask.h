@@ -1,6 +1,6 @@
 /*
+ * Copyright (C) 2018-2026 Slava Monich <slava@monich.com>
  * Copyright (C) 2018-2020 Jolla Ltd.
- * Copyright (C) 2018-2020 Slava Monich <slava.monich@jolla.com>
  *
  * You may use this file under the terms of the BSD license as follows:
  *
@@ -8,15 +8,17 @@
  * modification, are permitted provided that the following conditions
  * are met:
  *
- *   1. Redistributions of source code must retain the above copyright
- *      notice, this list of conditions and the following disclaimer.
- *   2. Redistributions in binary form must reproduce the above copyright
- *      notice, this list of conditions and the following disclaimer
- *      in the documentation and/or other materials provided with the
- *      distribution.
- *   3. Neither the names of the copyright holders nor the names of its
- *      contributors may be used to endorse or promote products derived
- *      from this software without specific prior written permission.
+ *  1. Redistributions of source code must retain the above copyright
+ *     notice, this list of conditions and the following disclaimer.
+ *
+ *  2. Redistributions in binary form must reproduce the above copyright
+ *     notice, this list of conditions and the following disclaimer
+ *     in the documentation and/or other materials provided with the
+ *     distribution.
+ *
+ *  3. Neither the names of the copyright holders nor the names of its
+ *     contributors may be used to endorse or promote products derived
+ *     from this software without specific prior written permission.
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
@@ -38,20 +40,35 @@
 #ifndef HARBOUR_TASK_H
 #define HARBOUR_TASK_H
 
-#include <QObject>
-#include <QRunnable>
+#include <QtCore/QObject>
+#include <QtCore/QRunnable>
+#include <QtCore/QScopedPointer>
 
 class QThread;
 class QThreadPool;
 
-/**
- * A Runnable that queues done() signal to the target thread when it's done.
- */
-class HarbourTask : public QObject, public QRunnable {
+//
+// A Runnable that queues done() signal to the target thread when it's done.
+//
+// run(), performTask() and isCanceled() are the only methods that are
+// supposed to be invoked on the worker thread. Everything else should
+// be happening in context of the main thread which created this object.
+//
+class HarbourTask :
+    public QObject,
+    public QRunnable
+{
     Q_OBJECT
 
+    // Cleanup template for QScopedPointer (used by AutoReleasePointer)
+    template <typename Task>
+    struct Release
+    {
+        static inline void cleanup(Task* t) { if (t) t->release(); }
+    };
+
 protected:
-    HarbourTask(QThreadPool* aPool, QThread* aTargetThread = Q_NULLPTR);
+    HarbourTask(QThreadPool*);
 
 public:
     virtual ~HarbourTask();
@@ -60,9 +77,17 @@ public:
     bool isCanceled() const;
 
     void submit();
-    void submit(QObject* aTarget, const char* aSlot);
-    void release(QObject* aHandler);
+    void submit(QObject*, const char*);
     void release();
+
+    // A smart pointer making sure that you don't forget to release the task
+    template <typename Task>
+    class AutoReleasePointer : public QScopedPointer<Task, Release<Task> >
+    {
+    public:
+        explicit inline AutoReleasePointer(Task* t = Q_NULLPTR) :
+            QScopedPointer<Task, Release<Task> >(t) {}
+    };
 
 private:
     void released();
@@ -78,7 +103,6 @@ Q_SIGNALS:
 private Q_SLOTS:
     void onAboutToQuit();
     void onRunFinished();
-    void onTargetDestroyed(QObject* aObject);
 
 private:
     class Private;
