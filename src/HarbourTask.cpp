@@ -53,6 +53,7 @@ class HarbourTask::Private
 {
 public:
     Private(QThreadPool*);
+    ~Private();
 
 public:
     QThreadPool* iPool;
@@ -79,6 +80,13 @@ HarbourTask::Private::Private(
     iDone(false)
 {}
 
+HarbourTask::Private::~Private()
+{
+    // Once the task is submitted, it must be released and finished before
+    // getting destroyed.
+    HASSERT(!iSubmitted || (iReleased && iFinished));
+}
+
 // ==========================================================================
 // HarbourTask
 // ==========================================================================
@@ -96,10 +104,6 @@ HarbourTask::HarbourTask(
 
 HarbourTask::~HarbourTask()
 {
-    // The target can be destroyed before done() signal is delivered to the
-    // main thread and the target has a chance to release the task.
-    HASSERT(iPrivate->iReleased || !iPrivate->iTarget);
-    HASSERT(!iPrivate->iSubmitted || iPrivate->iFinished);
     delete iPrivate;
 }
 
@@ -171,11 +175,20 @@ HarbourTask::run()
 void
 HarbourTask::onRunFinished()
 {
-    // Invoked on the main thread
     HASSERT(!iPrivate->iDone);
+
+    // If the runFinished() signal has already been queued by the worker
+    // thread when HarbourTask::release() is called by the main thread,
+    // the signal is still delivered by Qt. However, in this case (when
+    // the task has already been released) we don't want to issue the
+    // done() signal. Hence this check.
     if (!iPrivate->iReleased) {
+        // Note that the done() handler may (and probably will) release
+        // this task. Bus since iDone flag isn't set yet, that won't delete
+        // this object until we return from the signal.
         Q_EMIT done();
     }
+
     iPrivate->iDone = true;
     if (iPrivate->iReleased) {
         delete this;

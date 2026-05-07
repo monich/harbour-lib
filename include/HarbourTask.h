@@ -54,6 +54,15 @@ class QThreadPool;
 // supposed to be invoked on the worker thread. Everything else should
 // be happening in context of the main thread which created this object.
 //
+// Instances of this class shouldn't be explicitly deleted. The code which
+// creates an instance of HarbourTask, calls release() on it and drops the
+// pointer when it no longer needs the task. The object gets deleted either
+// immediately or later, at the appropriate time.
+//
+// The only case when it's safe to explicitly delete this object is when
+// you never called submit(). Then release() would be equivalent to delete.
+// In any case, it's safer to just call release()
+//
 class HarbourTask :
     public QObject,
     public QRunnable
@@ -81,7 +90,7 @@ public:
     void release();
 
     // A smart pointer making sure that you don't forget to release the task
-    template <typename Task>
+    template <typename Task = HarbourTask>
     class AutoReleasePointer : public QScopedPointer<Task, Release<Task> >
     {
     public:
