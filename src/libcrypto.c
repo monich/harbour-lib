@@ -220,7 +220,8 @@
 /* Leave it up to dlopen() to figure out the directory */
 static const char* libcrypto_so_path[] = {
     "libcrypto.so.1.1",
-    "libcrypto.so.10"
+    "libcrypto.so.10",
+    "libcrypto.so.3"
 };
 
 static const char* libcrypto_names[] = {
