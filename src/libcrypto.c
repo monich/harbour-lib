@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021-2024 Slava Monich <slava@monich.com>
+ * Copyright (C) 2021-2026 Slava Monich <slava@monich.com>
  * Copyright (C) 2021-2022 Jolla Ltd.
  *
  * You may use this file under the terms of the BSD license as follows:
@@ -97,6 +97,12 @@
 #  define OPENSSL_INIT_SETTINGS void
 #endif
 
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L
+#  define OPENSSL3_CONST_PTR(x) const x *
+#else
+#  define OPENSSL3_CONST_PTR(x) x *
+#endif
+
 /* f(name,params,args) */
 #define LIBCRYPTO_FUNCTIONS1(f) \
     f(AES_cbc_encrypt, \
@@ -167,8 +173,8 @@
      (opts, settings), 0) \
     f(int, RAND_bytes, (unsigned char* buf, int num), (buf, num), 0) \
     f(int, RAND_poll, (void), (), 0) \
-    f(RSA*, RSAPrivateKey_dup, (RSA* rsa), (rsa), NULL) \
-    f(RSA*, RSAPublicKey_dup, (RSA* rsa), (rsa), NULL) \
+    f(RSA*, RSAPrivateKey_dup, (OPENSSL3_CONST_PTR(RSA) rsa), (rsa), NULL) \
+    f(RSA*, RSAPublicKey_dup, (OPENSSL3_CONST_PTR(RSA) rsa), (rsa), NULL) \
     f(int, RSA_generate_key_ex, \
      (RSA* rsa, int bits, BIGNUM* e, BN_GENCB* cb), \
      (rsa, bits, e, cb), 0) \
