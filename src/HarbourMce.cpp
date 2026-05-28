@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2018-2024 Slava Monich <slava@monich.com>
+ * Copyright (C) 2018-2026 Slava Monich <slava@monich.com>
  * Copyright (C) 2018 Jolla Ltd.
  *
  * You may use this file under the terms of the BSD license as follows:
@@ -42,27 +42,25 @@
 #include <QtDBus/QDBusMessage>
 #include <QtDBus/QDBusPendingCallWatcher>
 
-#ifndef qMove
-#  define qMove(x) (x)
-#endif
-
 const QString HarbourMce::MCE_SERVICE("com.nokia.mce");
 const QString HarbourMce::MCE_REQUEST_PATH("/com/nokia/mce/request");
 const QString HarbourMce::MCE_REQUEST_INTERFACE("com.nokia.mce.request");
 const QString HarbourMce::MCE_SIGNAL_PATH("/com/nokia/mce/signal");
 const QString HarbourMce::MCE_SIGNAL_INTERFACE("com.nokia.mce.signal");
 
-HarbourMce::HarbourMce(QObject* aParent) :
+HarbourMce::HarbourMce(
+    QObject* aParent) :
     QObject(aParent)
-{
-}
+{}
 
+/* static */
 QDBusConnection
 HarbourMce::bus()
 {
     return QDBusConnection::systemBus();
 }
 
+/* static */
 QDBusPendingCall
 HarbourMce::request(
     QString aMethod)
@@ -80,6 +78,6 @@ HarbourMce::setupProperty(
 {
     bus().connect(MCE_SERVICE, MCE_SIGNAL_PATH, MCE_SIGNAL_INTERFACE,
         aSignal, this, aSignalSlot);
-    connect(new QDBusPendingCallWatcher(request(qMove(aQueryMethod)), this),
+    connect(new QDBusPendingCallWatcher(request(aQueryMethod), this),
         SIGNAL(finished(QDBusPendingCallWatcher*)), this, aQuerySlot);
 }

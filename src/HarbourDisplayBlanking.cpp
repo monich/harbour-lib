@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2024 Slava Monich <slava@monich.com>
+ * Copyright (C) 2015-2026 Slava Monich <slava@monich.com>
  * Copyright (C) 2015-2019 Jolla Ltd.
  *
  * You may use this file under the terms of the BSD license as follows:
@@ -41,12 +41,9 @@
 #include "HarbourDebug.h"
 #include "HarbourMce.h"
 
-#include <QDBusMessage>
-#include <QDBusConnection>
-#include <QDBusPendingCallWatcher>
-#include <QDBusPendingReply>
-
-#include <QTimer>
+#include <QtCore/QTimer>
+#include <QtDBus/QDBusPendingCallWatcher>
+#include <QtDBus/QDBusPendingReply>
 
 // ==========================================================================
 // HarbourDisplayBlanking::Private
@@ -107,13 +104,15 @@ HarbourDisplayBlanking::Private::Private(
     iPauseRequested(false),
     iPauseActive(false),
     iRequestIntervalSec(DEFAULT_REPEAT_INTERVAL_SEC),
-    iRepeatTimer(NULL)
+    iRepeatTimer(Q_NULLPTR)
 {
     HDEBUG("created");
-    setupProperty("get_display_blanking_pause", "display_blanking_pause_ind",
+    setupProperty("get_display_blanking_pause",
+        "display_blanking_pause_ind",
         SLOT(onDisplayBlankingPauseQueryDone(QDBusPendingCallWatcher*)),
         SLOT(onDisplayBlankingPauseChanged(QString)));
-    setupProperty("get_display_blanking_pause_allowed", "display_blanking_pause_allowed_ind",
+    setupProperty("get_display_blanking_pause_allowed",
+        "display_blanking_pause_allowed_ind",
         SLOT(onDisplayBlankingPauseAllowedQueryDone(QDBusPendingCallWatcher*)),
         SLOT(onDisplayBlankingPauseAllowedChanged(bool)));
 }
@@ -167,6 +166,7 @@ HarbourDisplayBlanking::Private::onDisplayBlankingPauseQueryDone(
     QDBusPendingCallWatcher* aWatcher)
 {
     QDBusPendingReply<QString> reply(*aWatcher);
+
     if (reply.isValid() && !reply.isError()) {
         HDEBUG(reply);
         updateDisplayBlankingPause(reply.value());
@@ -181,6 +181,7 @@ HarbourDisplayBlanking::Private::onDisplayBlankingPauseAllowedQueryDone(
     QDBusPendingCallWatcher* aWatcher)
 {
     QDBusPendingReply<bool> reply(*aWatcher);
+
     if (reply.isValid() && !reply.isError()) {
         HDEBUG(reply);
         updateDisplayBlankingAllowed(reply.value());
@@ -208,6 +209,7 @@ HarbourDisplayBlanking::Private::setRequestInterval(
     int aValue)
 {
     const int interval = qMax(int(MIN_REPEAT_INTERVAL_SEC), aValue);
+
     if (iRequestIntervalSec != interval) {
         iRequestIntervalSec = interval;
         HDEBUG(interval);
@@ -225,6 +227,7 @@ void
 HarbourDisplayBlanking::Private::checkPause()
 {
     const bool active = iPauseRequested && iPauseAllowed;
+
     if (iPauseActive != active) {
         iPauseActive = active;
         HDEBUG(active);
@@ -294,6 +297,7 @@ QSharedPointer<HarbourDisplayBlanking>
 HarbourDisplayBlanking::sharedInstance()
 {
     QSharedPointer<HarbourDisplayBlanking> instance = Private::sSharedInstance;
+
     if (instance.isNull()) {
         // QObject::deleteLater protects against trouble in case if the
         // recipient of the signal drops the last shared reference.
@@ -340,7 +344,6 @@ HarbourDisplayBlanking::setRequestInterval(
     int aValue)
 {
     return iPrivate->setRequestInterval(aValue);
-
 }
 
 #include "HarbourDisplayBlanking.moc"

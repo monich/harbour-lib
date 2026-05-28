@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2024 Slava Monich <slava@monich.com>
+ * Copyright (C) 2015-2026 Slava Monich <slava@monich.com>
  * Copyright (C) 2015-2019 Jolla Ltd.
  *
  * You may use this file under the terms of the BSD license as follows:
@@ -41,7 +41,6 @@
 #include "HarbourDebug.h"
 #include "HarbourMce.h"
 
-#include <QtDBus/QDBusMessage>
 #include <QtDBus/QDBusPendingCallWatcher>
 #include <QtDBus/QDBusPendingReply>
 
@@ -75,9 +74,9 @@ private:
     void setLockMode(const QString&);
 
 public Q_SLOTS:
-    void onDisplayStatusChanged(QString);
+    void onDisplayStatusChanged(const QString&);
     void onDisplayStatusQueryDone(QDBusPendingCallWatcher*);
-    void onLockModeChanged(QString);
+    void onLockModeChanged(const QString&);
     void onLockModeQueryDone(QDBusPendingCallWatcher*);
 };
 
@@ -120,7 +119,7 @@ HarbourSystemState::Private::setDisplayStatus(
 
 void
 HarbourSystemState::Private::onDisplayStatusChanged(
-    QString aStatus)
+    const QString& aStatus)
 {
     HDEBUG(aStatus);
     setDisplayStatus(aStatus);
@@ -131,6 +130,7 @@ HarbourSystemState::Private::onDisplayStatusQueryDone(
     QDBusPendingCallWatcher* aWatcher)
 {
     QDBusPendingReply<QString> reply(*aWatcher);
+
     HDEBUG(reply);
     if (reply.isValid() && !reply.isError()) {
         setDisplayStatus(reply.value());
@@ -161,7 +161,7 @@ HarbourSystemState::Private::setLockMode(
 
 void
 HarbourSystemState::Private::onLockModeChanged(
-    QString aMode)
+    const QString& aMode)
 {
     HDEBUG(aMode);
     setLockMode(aMode);
@@ -172,6 +172,7 @@ HarbourSystemState::Private::onLockModeQueryDone(
     QDBusPendingCallWatcher* aWatcher)
 {
     QDBusPendingReply<QString> reply(*aWatcher);
+
     HDEBUG(reply);
     if (reply.isValid() && !reply.isError()) {
         setLockMode(reply.value());
@@ -209,6 +210,7 @@ QSharedPointer<HarbourSystemState>
 HarbourSystemState::sharedInstance()
 {
     QSharedPointer<HarbourSystemState> instance = Private::sSharedInstance;
+
     if (instance.isNull()) {
         // QObject::deleteLater protects against trouble in case if the
         // recipient of the signal drops the last shared reference.

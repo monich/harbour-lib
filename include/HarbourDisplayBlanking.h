@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2024 Slava Monich <slava@monich.com>
+ * Copyright (C) 2015-2026 Slava Monich <slava@monich.com>
  * Copyright (C) 2015-2019 Jolla Ltd.
  *
  * You may use this file under the terms of the BSD license as follows:
@@ -40,14 +40,16 @@
 #ifndef HARBOUR_DISPLAY_BLANKING_H
 #define HARBOUR_DISPLAY_BLANKING_H
 
-#include <QObject>
-#include <QString>
-#include <QSharedPointer>
+#include <QtCore/QObject>
+#include <QtCore/QSharedPointer>
+#include <QtCore/QString>
 
 class QQmlEngine;
 class QJSEngine;
 
-class HarbourDisplayBlanking: public QObject {
+class HarbourDisplayBlanking :
+    public QObject
+{
     Q_OBJECT
     Q_PROPERTY(bool paused READ paused NOTIFY pausedChanged)
     Q_PROPERTY(bool pauseAllowed READ pauseAllowed NOTIFY pauseAllowedChanged)
@@ -55,7 +57,7 @@ class HarbourDisplayBlanking: public QObject {
     Q_PROPERTY(int requestInterval READ requestInterval WRITE setRequestInterval NOTIFY requestIntervalChanged)
 
 public:
-    explicit HarbourDisplayBlanking(QObject* aParent = NULL);
+    explicit HarbourDisplayBlanking(QObject* aParent = Q_NULLPTR);
     ~HarbourDisplayBlanking();
 
     // Callback for qmlRegisterSingletonType<HarbourDisplayBlanking>
