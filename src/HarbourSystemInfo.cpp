@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020-2024 Slava Monich <slava@monich.com>
+ * Copyright (C) 2020-2026 Slava Monich <slava@monich.com>
  * Copyright (C) 2020-2021 Jolla Ltd.
  *
  * You may use this file under the terms of the BSD license as follows:
@@ -92,10 +92,12 @@ const QString HarbourSystemInfo::Private::VERSION_ID("VERSION_ID");
 HarbourSystemInfo::Private::Private()
 {
     QStringList keys;
+
     keys.append(NAME);
     keys.append(VERSION_ID);
 
     QHash<QString,QString> values(parseOsRelease(keys));
+
     iName = values.value(NAME);
     iVersion = values.value(VERSION_ID);
     iParsedVersion = parseVersion(iVersion);
@@ -116,17 +118,22 @@ HarbourSystemInfo::Private::parseFile(
 {
     QFile file(aPath);
     QHash<QString,QString> result;
+
     if (file.open(QIODevice::ReadOnly | QIODevice::Text)) {
-        HDEBUG("Parsing" << qPrintable(aPath));
         QTextStream in(&file);
+
+        HDEBUG("Parsing" << qPrintable(aPath));
         while (!in.atEnd() && result.size() < aKeys.size()) {
             const QString line = in.readLine();
             const int sep = line.indexOf('=');
+
             if (sep > 0 && (sep + 1) < line.length()) {
                 const QString key(line.left(sep));
+
                 if (aKeys.contains(key)) {
                     QString value(line.mid(sep + 1));
                     const int len = value.length();
+
                     if (len > 1 && value.at(0) == '"' && value.at(len - 1) == '"') {
                         value = value.mid(1, len - 2);
                     }
@@ -147,10 +154,12 @@ HarbourSystemInfo::Private::parseVersion(
     QVector<uint> parsed;
     QStringList parts(aVersion.split('.', qSkipEmptyParts));
     const int n = qMin(parts.count(),4);
+
     for (int i = 0; i < n; i++) {
         const QString part(parts.at(i));
         bool ok = false;
         int val = part.toUInt(&ok);
+
         if (ok) {
             parsed.append(val);
         } else {
@@ -168,9 +177,11 @@ HarbourSystemInfo::Private::compareVersions(
     const int n1 = aVersion1.size();
     const int n2 = aVersion2.size();
     const int n = qMin(n1, n2);
+
     for (int i = 0; i < n; i++) {
         const uint v1 = aVersion1.at(i);
         const uint v2 = aVersion2.at(i);
+
         if (v1 > v2) {
             return 1;
         } else if (v1 < v2) {
@@ -194,6 +205,7 @@ HarbourSystemInfo::Private::getPackageVersion(
     const QString& aPackage)
 {
     QString version;
+
     if (!aPackage.isEmpty()) {
         version = iPackageVersions.value(aPackage);
         if (version.isEmpty()) {
@@ -265,6 +277,7 @@ HarbourSystemInfo::osVersionCompareWith(
 {
     const QStringList keys(Private::VERSION_ID);
     const QString os(Private::parseOsRelease(keys).value(Private::VERSION_ID));
+
     return Private::compareVersions(Private::parseVersion(os), aVersion);
 }
 
@@ -283,11 +296,14 @@ HarbourSystemInfo::queryPackageVersion(
 {
     QString version;
     int fds[2];
+
     if (pipe(fds) == 0) {
         pid_t pid = fork();
+
         if (!pid) {
             const QByteArray package(aPackage.toLatin1());
             const char* argv[6];
+
             argv[0] = "rpm";
             argv[1] = "-q";
             argv[2] = "--qf";
@@ -304,6 +320,7 @@ HarbourSystemInfo::queryPackageVersion(
         QByteArray out;
         const int chunk = 16;
         ssize_t n = 0;
+
         do {
             const int size = out.size();
             out.resize(size + chunk);

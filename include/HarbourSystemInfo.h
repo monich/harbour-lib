@@ -1,6 +1,6 @@
 /*
+ * Copyright (C) 2020-2026 Slava Monich <slava@monich.com>
  * Copyright (C) 2020-2021 Jolla Ltd.
- * Copyright (C) 2020-2021 Slava Monich <slava@monich.com>
  *
  * You may use this file under the terms of the BSD license as follows:
  *
@@ -8,15 +8,17 @@
  * modification, are permitted provided that the following conditions
  * are met:
  *
- *   1. Redistributions of source code must retain the above copyright
- *      notice, this list of conditions and the following disclaimer.
- *   2. Redistributions in binary form must reproduce the above copyright
- *      notice, this list of conditions and the following disclaimer
- *      in the documentation and/or other materials provided with the
- *      distribution.
- *   3. Neither the names of the copyright holders nor the names of its
- *      contributors may be used to endorse or promote products derived
- *      from this software without specific prior written permission.
+ *  1. Redistributions of source code must retain the above copyright
+ *     notice, this list of conditions and the following disclaimer.
+ *
+ *  2. Redistributions in binary form must reproduce the above copyright
+ *     notice, this list of conditions and the following disclaimer
+ *     in the documentation and/or other materials provided with the
+ *     distribution.
+ *
+ *  3. Neither the names of the copyright holders nor the names of its
+ *     contributors may be used to endorse or promote products derived
+ *     from this software without specific prior written permission.
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
@@ -38,16 +40,16 @@
 #ifndef HARBOUR_SYSTEM_INFO_H
 #define HARBOUR_SYSTEM_INFO_H
 
-#include <QObject>
-#include <QVector>
+#include <QtCore/QObject>
+#include <QtCore/QVector>
 
 class QQmlEngine;
 class QJSEngine;
 
-class HarbourSystemInfo: public QObject
+class HarbourSystemInfo :
+    public QObject
 {
     Q_OBJECT
-    Q_DISABLE_COPY(HarbourSystemInfo)
     Q_PROPERTY(QString osName READ osName CONSTANT)
     Q_PROPERTY(QString osVersion READ osVersion CONSTANT)
 
@@ -56,17 +58,17 @@ public:
     ~HarbourSystemInfo();
 
     // Callback for qmlRegisterSingletonType<HarbourSystemInfo>
-    static QObject* createSingleton(QQmlEngine* aEngine, QJSEngine* aScript);
+    static QObject* createSingleton(QQmlEngine*, QJSEngine*);
 
     QString osName() const;
     QString osVersion() const;
 
-    Q_INVOKABLE QString packageVersion(QString aPackage);
-    Q_INVOKABLE int osVersionCompare(QString aVersion);
-    Q_INVOKABLE static int compareVersions(QString aVersion1, QString aVersion2);
+    Q_INVOKABLE QString packageVersion(QString);
+    Q_INVOKABLE int osVersionCompare(QString);
+    Q_INVOKABLE static int compareVersions(QString, QString);
 
-    static QString queryPackageVersion(QString aVersion);
-    static int osVersionCompareWith(QString aVersion);
+    static QString queryPackageVersion(QString);
+    static int osVersionCompareWith(QString);
 
 private:
     class Private;
