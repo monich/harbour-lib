@@ -46,6 +46,8 @@
 class QQmlEngine;
 class QJSEngine;
 
+// Note that package version queries may not work in a sadbox if rpm
+// binary isn't there.
 class HarbourSystemInfo :
     public QObject
 {
@@ -67,7 +69,7 @@ public:
     Q_INVOKABLE int osVersionCompare(QString);
     Q_INVOKABLE static int compareVersions(QString, QString);
 
-    static QString queryPackageVersion(QString);
+    QString queryPackageVersion(QString) const;
     static int osVersionCompareWith(QString);
 
 private:

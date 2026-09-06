@@ -41,6 +41,7 @@
 #include "HarbourDebug.h"
 
 #include <QtCore/QFile>
+#include <QtCore/QFileInfo>
 #include <QtCore/QHash>
 #include <QtCore/QStringList>
 #include <QtCore/QTextStream>
@@ -76,10 +77,13 @@ public:
     static QVector<uint> parseVersion(const QString&);
     static int compareVersions(const QVector<uint>&, const QVector<uint>&);
     static int compareVersions(const QVector<uint>&, const QString&);
+    static QByteArray run(const char* argv[]);
 
+    QString queryPackageVersion(const QString&);
     QString getPackageVersion(const QString&);
 
 public:
+    QByteArray iRpmPath;
     QString iName;
     QString iVersion;
     QVector<uint> iParsedVersion;
@@ -101,6 +105,17 @@ HarbourSystemInfo::Private::Private()
     iName = values.value(NAME);
     iVersion = values.value(VERSION_ID);
     iParsedVersion = parseVersion(iVersion);
+
+    // Find the rpm binary (if we are jailed, it may not be there)
+    QByteArray rpmPath("/bin/rpm");
+    const QFileInfo rpm(QString::fromLatin1(rpmPath));
+
+    if (rpm.isFile() && rpm.isExecutable()) {
+        HDEBUG("Found" << rpmPath.constData());
+        iRpmPath = rpmPath;
+    } else {
+        HDEBUG("Couldn't find rpm (are we sadboxed?)");
+    }
 }
 
 inline
@@ -201,6 +216,34 @@ HarbourSystemInfo::Private::compareVersions(
 }
 
 QString
+HarbourSystemInfo::Private::queryPackageVersion(
+    const QString& aPackage)
+{
+    QString version;
+
+    if (!iRpmPath.isEmpty()) {
+        const QByteArray package(aPackage.toLatin1());
+        const char* argv[6];
+
+        argv[0] = iRpmPath.constData();
+        argv[1] = "-q";
+        argv[2] = "--qf";
+        argv[3] = "%{version}";
+        argv[4] = package.constData();
+        argv[5] = NULL;
+
+        QByteArray out(run(argv));
+
+        // Parse the version
+        if (out.size() > 0) {
+            version = QString::fromLatin1(out);
+            HDEBUG(qPrintable(aPackage) << qPrintable(version));
+        }
+    }
+    return version;
+}
+
+QString
 HarbourSystemInfo::Private::getPackageVersion(
     const QString& aPackage)
 {
@@ -209,13 +252,47 @@ HarbourSystemInfo::Private::getPackageVersion(
     if (!aPackage.isEmpty()) {
         version = iPackageVersions.value(aPackage);
         if (version.isEmpty()) {
-            version = HarbourSystemInfo::queryPackageVersion(aPackage);
+            version = queryPackageVersion(aPackage);
             if (!version.isEmpty()) {
                 iPackageVersions.insert(aPackage, version);
             }
         }
     }
     return version;
+}
+
+QByteArray
+HarbourSystemInfo::Private::run(
+    const char* aArgv[])
+{
+    QByteArray out;
+    int fds[2];
+
+    if (pipe(fds) == 0) {
+        pid_t pid = fork();
+
+        if (!pid) {
+            while ((dup2(fds[1], STDOUT_FILENO) == -1) && (errno == EINTR));
+            execvp(aArgv[0], (char**)aArgv);
+            abort();
+        }
+        close(fds[1]);
+
+        // Suboptimal but we are not expecting much output
+        const int chunk = 64;
+        ssize_t n = 0;
+
+        do {
+            const int size = out.size();
+            out.resize(size + chunk);
+            while ((n = read(fds[0], out.data() + size, chunk)) == -1 && (errno == EINTR));
+            out.resize(size + qMax(n, (ssize_t)0));
+        } while (n > 0);
+
+        waitpid(pid, NULL, 0);
+        close(fds[0]);
+    }
+    return out;
 }
 
 // ==========================================================================
@@ -292,49 +369,7 @@ HarbourSystemInfo::compareVersions(
 
 QString
 HarbourSystemInfo::queryPackageVersion(
-    QString aPackage)
+    QString aPackage) const
 {
-    QString version;
-    int fds[2];
-
-    if (pipe(fds) == 0) {
-        pid_t pid = fork();
-
-        if (!pid) {
-            const QByteArray package(aPackage.toLatin1());
-            const char* argv[6];
-
-            argv[0] = "rpm";
-            argv[1] = "-q";
-            argv[2] = "--qf";
-            argv[3] = "%{version}";
-            argv[4] = package.constData();
-            argv[5] = NULL;
-            while ((dup2(fds[1], STDOUT_FILENO) == -1) && (errno == EINTR));
-            execvp(argv[0], (char**)argv);
-            abort();
-        }
-        close(fds[1]);
-
-        // There shouldn't be much output
-        QByteArray out;
-        const int chunk = 16;
-        ssize_t n = 0;
-
-        do {
-            const int size = out.size();
-            out.resize(size + chunk);
-            while ((n = read(fds[0], out.data() + size, chunk)) == -1 && (errno == EINTR));
-            out.resize(size + qMax(n, (ssize_t)0));
-        } while (n > 0);
-
-        // Parse the version
-        if (out.size() > 0) {
-            version = QString::fromLatin1(out);
-            HDEBUG(qPrintable(aPackage) << qPrintable(version));
-        }
-        waitpid(pid, NULL, 0);
-        close(fds[0]);
-    }
-    return version;
+    return iPrivate->queryPackageVersion(aPackage);
 }
