@@ -46,6 +46,7 @@ Item {
     property real maxWidth: parent.width
     property alias text: label.text
     property alias backgroundColor: background.color
+    property alias border: background.border
     property alias textColor: label.color
 
     readonly property real _radius: height/2
