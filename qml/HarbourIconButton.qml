@@ -52,7 +52,7 @@ IconButton {
 
     icon {
         source: iconSource
-        sourceSize: Qt.size(thisItem.width, thisItem.height)
+        sourceSize: Qt.size(Theme.iconSizeMedium, Theme.iconSizeMedium)
         highlighted: highlightEnabled
         highlightColor: _showPress ? thisItem.highlightColor : Theme.primaryColor
     }
