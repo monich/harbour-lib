@@ -48,6 +48,8 @@ IconButton {
 
     readonly property bool _showPress: highlightEnabled && (highlighted || pressTimer.running)
 
+    enabled: visible
+
     icon {
         source: iconSource
         sourceSize: Qt.size(thisItem.width, thisItem.height)
